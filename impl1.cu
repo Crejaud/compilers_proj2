@@ -65,7 +65,7 @@ void puller(std::vector<initial_vertex> * peeps, int blockSize, int blockNum){
     unsigned int vertices_length = peeps->size();
     unsigned int *distance_prev = (unsigned int *) malloc(peeps->size() * sizeof(unsigned int));
     unsigned int *distance_cur = (unsigned int *) malloc(peeps->size() * sizeof(unsigned int));
-    int *noChange;
+    int *noChange = (int *) malloc(sizeof(int));
     *noChange = TRUE;
 
     unsigned int *cuda_edges_src, *cuda_edges_dest, *cuda_edges_weight;
