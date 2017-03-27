@@ -133,7 +133,7 @@ void puller(std::vector<initial_vertex> * peeps, int blockSize, int blockNum){
                                           cuda_distance_prev, cuda_distance_cur,
                                           cuda_noChange);
       cudaMemcpy(noChange, cuda_noChange, sizeof(int), cudaMemcpyDeviceToHost);
-	    if (noChange == TRUE) break;
+	    if (*noChange == TRUE) break;
       *noChange = TRUE;
       cudaMemcpy(cuda_noChange, noChange, sizeof(int), cudaMemcpyHostToDevice);
 	    swap_arrays(&cuda_distance_prev, &cuda_distance_cur);
