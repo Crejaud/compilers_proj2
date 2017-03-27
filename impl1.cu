@@ -108,9 +108,12 @@ void puller(std::vector<initial_vertex> * peeps, int blockSize, int blockNum){
     cudaDeviceSynchronize();
     std::cout << "Took " << getTime() << "ms.\n";
 
+    cudaMemcpy(distance_cur, cuda_distance_cur, vertices_length * sizeof(unsigned int),
+             cudaMemcpyDeviceToHost);
+
     // print it out to test
     for(int i = 0; i < vertices_length; i++) {
-      printf("Vertex[%d] = %d", i, cuda_distance_cur[i]);
+      printf("Vertex[%d] = %d", i, distance_cur[i]);
     }
 
     /* Deallocate. */
