@@ -108,6 +108,11 @@ void puller(std::vector<initial_vertex> * peeps, int blockSize, int blockNum){
     cudaDeviceSynchronize();
     std::cout << "Took " << getTime() << "ms.\n";
 
+    // print it out to test
+    for(int i = 0; i < vertices_length; i++) {
+      printf("Vertex[%d] = %d", i, cuda_distance_cur[i]);
+    }
+
     /* Deallocate. */
     cudaFree(cuda_edges_src);
     cudaFree(cuda_edges_dest);
