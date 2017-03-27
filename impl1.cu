@@ -6,12 +6,16 @@
 #include "initial_graph.hpp"
 #include "parse_graph.hpp"
 
+#define TRUE 1
+#define FALSE 0
+
 __global__ void edge_process(unsigned int edges_length,
                             unsigned int *src,
                             unsigned int *dest,
                             unsigned int *weight,
                             unsigned int *distance_prev,
-                            unsigned int *distance_cur) {
+                            unsigned int *distance_cur,
+                            int *noChange) {
     unsigned int thread_id = blockDim.x * blockIdx.x + threadIdx.x;
     unsigned int thread_num = blockDim.x * gridDim.x;
 
@@ -27,9 +31,23 @@ __global__ void edge_process(unsigned int edges_length,
       unsigned int u = src[i];
       unsigned int v = dest[i];
       unsigned int w = weight[i];
-      if (distance_prev[u] + w < distance_prev[v])
-        atomicMin(&distance_cur[v], distance_prev[u] + w);
+      if (distance_prev[u] + w < distance_prev[v]) {
+        // relax
+        int old_distance = atomicMin(&distance_cur[v], distance_prev[u] + w);
+        // test for a change!
+        if (old_distance != distance_cur[v]) {
+          noChange == FALSE;
+        }
+      }
     }
+}
+
+void swap_arrays(unsigned int**, unsigned int**);
+
+void swap_arrays(unsigned int **a, unsigned int **b) {
+  unsigned int *temp = *a;
+  *a = *b;
+  *b = temp;
 }
 
 void puller(std::vector<initial_vertex> * peeps, int blockSize, int blockNum){
@@ -47,9 +65,12 @@ void puller(std::vector<initial_vertex> * peeps, int blockSize, int blockNum){
     unsigned int vertices_length = peeps->size();
     unsigned int *distance_prev = (unsigned int *) malloc(peeps->size() * sizeof(unsigned int));
     unsigned int *distance_cur = (unsigned int *) malloc(peeps->size() * sizeof(unsigned int));
+    int *noChange;
+    *noChange = TRUE;
 
     unsigned int *cuda_edges_src, *cuda_edges_dest, *cuda_edges_weight;
     unsigned int *cuda_distance_prev, *cuda_distance_cur;
+    int *cuda_noChange;
 
     // the distance to the first vertex is always 0
     distance_prev[0] = 0;
@@ -59,6 +80,7 @@ void puller(std::vector<initial_vertex> * peeps, int blockSize, int blockNum){
     for (int i = 1; i < vertices_length; i++) {
       distance_prev[i] = -1;
       distance_cur[i] = -1;
+      printf("%u %u\n", distance_prev[i], distance_cur[i]);
     }
 
     // get edges_length
@@ -89,24 +111,32 @@ void puller(std::vector<initial_vertex> * peeps, int blockSize, int blockNum){
     cudaMalloc((void **)&cuda_edges_weight, edges_length * sizeof(unsigned int));
     cudaMalloc((void **)&cuda_distance_prev, vertices_length * sizeof(unsigned int));
     cudaMalloc((void **)&cuda_distance_cur, vertices_length * sizeof(unsigned int));
+    cudaMalloc((void **)&cuda_noChange, sizeof(int));
 
     cudaMemcpy(cuda_edges_src, edges_src, edges_length * sizeof(unsigned int), cudaMemcpyHostToDevice);
     cudaMemcpy(cuda_edges_dest, edges_dest, edges_length * sizeof(unsigned int), cudaMemcpyHostToDevice);
     cudaMemcpy(cuda_edges_weight, edges_weight, edges_length * sizeof(unsigned int), cudaMemcpyHostToDevice);
     cudaMemcpy(cuda_distance_prev, distance_prev, vertices_length * sizeof(unsigned int), cudaMemcpyHostToDevice);
     cudaMemcpy(cuda_distance_cur, distance_cur, vertices_length * sizeof(unsigned int), cudaMemcpyHostToDevice);
+    cudaMemcpy(cuda_noChange, noChange, sizeof(int), cudaMemcpyHostToDevice);
 
     setTime();
 
     /*
      * Do all the things here!
      **/
+
+    // out-of-core
     for (int i = 1; i < vertices_length; i++) {
     	edge_process<<<blockNum, blockSize>>>(edges_length, cuda_edges_src,
                                           cuda_edges_dest, cuda_edges_weight,
-                                          cuda_distance_prev, cuda_distance_cur);
-	if (noChange == 1) break;
-	swap(cuda_distance_prev, cuda_distance_cur);
+                                          cuda_distance_prev, cuda_distance_cur,
+                                          cuda_noChange);
+      cudaMemcpy(noChange, cuda_noChange, sizeof(int), cudaMemcpyDeviceToHost);
+	    if (noChange == TRUE) break;
+      *noChange = TRUE;
+      cudaMemcpy(cuda_noChange, noChange, sizeof(int), cudaMemcpyHostToDevice);
+	    swap_arrays(&cuda_distance_prev, &cuda_distance_cur);
     }
 
     cudaDeviceSynchronize();
@@ -117,7 +147,7 @@ void puller(std::vector<initial_vertex> * peeps, int blockSize, int blockNum){
 
     // print it out to test
     for(int i = 0; i < vertices_length; i++) {
-      printf("Vertex[%d] = %d\n", i, distance_cur[i]);
+      printf("Vertex[%u] = %u\n", i, distance_cur[i]);
     }
 
     /* Deallocate. */
