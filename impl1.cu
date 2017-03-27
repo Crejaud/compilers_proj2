@@ -36,7 +36,7 @@ __global__ void edge_process(unsigned int edges_length,
         int old_distance = atomicMin(&distance_cur[v], distance_prev[u] + w);
         // test for a change!
         if (old_distance != distance_cur[v]) {
-          noChange == FALSE;
+          *noChange = FALSE;
         }
       }
     }
