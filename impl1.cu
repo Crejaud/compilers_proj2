@@ -101,6 +101,7 @@ void puller(std::vector<initial_vertex> * peeps, int blockSize, int blockNum){
         edges_src[edge_index] = peeps->at(i).nbrs[j].srcIndex;
         edges_dest[edge_index] = i;
         edges_weight[edge_index] = peeps->at(i).nbrs[j].edgeValue.weight;
+        printf("src: %u | dest: %u | weight: %u\n", edges_src[edge_index], edges_dest[edge_index], edges_weight[edge_index]);
 
         edge_index++;
       }
