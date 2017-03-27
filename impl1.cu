@@ -101,9 +101,13 @@ void puller(std::vector<initial_vertex> * peeps, int blockSize, int blockNum){
     /*
      * Do all the things here!
      **/
-    edge_process<<<blockNum, blockSize>>>(edges_length, cuda_edges_src,
+    for (int i = 1; i < vertices_length; i++) {
+    	edge_process<<<blockNum, blockSize>>>(edges_length, cuda_edges_src,
                                           cuda_edges_dest, cuda_edges_weight,
                                           cuda_distance_prev, cuda_distance_cur);
+	if (noChange == 1) break;
+	swap(cuda_distance_prev, cuda_distance_cur);
+    }
 
     cudaDeviceSynchronize();
     std::cout << "Took " << getTime() << "ms.\n";
@@ -113,7 +117,7 @@ void puller(std::vector<initial_vertex> * peeps, int blockSize, int blockNum){
 
     // print it out to test
     for(int i = 0; i < vertices_length; i++) {
-      printf("Vertex[%d] = %d", i, distance_cur[i]);
+      printf("Vertex[%d] = %d\n", i, distance_cur[i]);
     }
 
     /* Deallocate. */
