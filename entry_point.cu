@@ -151,7 +151,7 @@ int main( int argc, char** argv )
 		unsigned int * distance = (unsigned int *) malloc(parsedGraph->size() * sizeof(unsigned int));
 		switch(processingMethod){
 		case ProcessingType::Push:
-		    puller(&parsedGraph, bsize, bcount, sync, smem, outputFile, distance);
+		    puller(&parsedGraph, bsize, bcount, sync, smem, distance);
 		    break;
 		case ProcessingType::Neighbor:
 		    neighborHandler(&parsedGraph, bsize, bcount);
