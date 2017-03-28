@@ -9,11 +9,12 @@
 #include "cuda_error_check.cuh"
 #include "initial_graph.hpp"
 #include "parse_graph.hpp"
-#include "methods.h"
 
 #include "opt.cu"
 #include "impl2.cu"
 #include "impl1.cu"
+
+#include "methods.cpp"
 
 enum SyncMode syncMethod;
 enum SmemMode smemMethod;

@@ -5,7 +5,7 @@
 #include "cuda_error_check.cuh"
 #include "initial_graph.hpp"
 #include "parse_graph.hpp"
-#include "methods.h"
+#include "methods.cpp"
 
 #define TRUE 1
 #define FALSE 0
