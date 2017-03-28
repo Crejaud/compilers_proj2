@@ -53,7 +53,7 @@ __global__ void edge_process_out_of_core_shared_memory(unsigned int edges_length
         s_data[threadIdx.x] = min(distance_cur[v], distance_prev[u] + w);
       }
 
-      printf("%u %u %u | s_data at %u is %u, lane %u, i %u\n", u, v, w, threadIdx.x, s_data[threadIdx.x], lane, i);
+      //printf("%u %u %u | s_data at %u is %u, lane %u, i %u\n", u, v, w, threadIdx.x, s_data[threadIdx.x], lane, i);
 
       __syncthreads();
 
@@ -75,7 +75,7 @@ __global__ void edge_process_out_of_core_shared_memory(unsigned int edges_length
       if (i + 1 < edges_length) {
         // this thread is the last thread for the segment, so it holds the min
         if (dest_s_data[threadIdx.x] != dest_s_data[threadIdx.x+1] || is_dest_valid[threadIdx.x+1] == FALSE) {
-          printf("the min for dest %u is %u\n", dest[i], s_data[threadIdx.x]);
+          //printf("the min for dest %u is %u\n", dest[i], s_data[threadIdx.x]);
           int old_distance = atomicMin(&distance_cur[v], s_data[threadIdx.x]);
           if (distance_cur[v] != -1)
             atomicMin(&is_distance_infinity[v], FALSE);
@@ -88,7 +88,7 @@ __global__ void edge_process_out_of_core_shared_memory(unsigned int edges_length
       }
       // i is the last element
       else {
-        printf("the min for dest %u is %u\n", dest[i], s_data[threadIdx.x]);
+        //printf("the min for dest %u is %u\n", dest[i], s_data[threadIdx.x]);
         int old_distance = atomicMin(&distance_cur[v], s_data[threadIdx.x]);
         if (distance_cur[v] != -1)
           atomicMin(&is_distance_infinity[v], FALSE);
@@ -294,7 +294,7 @@ void puller(std::vector<initial_vertex> * peeps, int blockSize, int blockNum, in
       // shared memory
       else if (smem == 1) {
         for (int i = 1; i < vertices_length; i++) {
-          printf("pass %d\n", i);
+          //printf("pass %d\n", i);
           edge_process_out_of_core_shared_memory<<<blockNum, blockSize, blockSize * sizeof(unsigned int)>>>(edges_length, cuda_edges_src,
                                               cuda_edges_dest, cuda_edges_weight,
                                               cuda_distance_prev, cuda_distance_cur,
@@ -306,9 +306,6 @@ void puller(std::vector<initial_vertex> * peeps, int blockSize, int blockNum, in
 
           // get current distance and copy it to both cuda_distance_prev and cuda_distance_cur
           cudaMemcpy(distance_cur, cuda_distance_cur, vertices_length * sizeof(unsigned int), cudaMemcpyDeviceToHost);
-          for(int j = 0; j < vertices_length; j++) {
-            printf("%u\n", distance_cur[j]);
-          }
           cudaMemcpy(cuda_distance_prev, distance_cur, vertices_length * sizeof(unsigned int), cudaMemcpyHostToDevice);
           cudaMemcpy(cuda_distance_cur, distance_cur, vertices_length * sizeof(unsigned int), cudaMemcpyHostToDevice);
         }
