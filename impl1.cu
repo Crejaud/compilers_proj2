@@ -5,12 +5,10 @@
 #include "cuda_error_check.cuh"
 #include "initial_graph.hpp"
 #include "parse_graph.hpp"
+#include "entry_point.cu"
 
 #define TRUE 1
 #define FALSE 0
-
-enum SyncMode {InCore, OutOfCore};
-enum SmemMode {UseSmem, UseNoSmem};
 
 /* Edge process out of core with shared memory */
 __global__ void edge_process_out_of_core_shared_memory(unsigned int edges_length,
