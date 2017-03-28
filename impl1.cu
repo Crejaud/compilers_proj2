@@ -38,6 +38,7 @@ __global__ void edge_process(unsigned int edges_length,
         printf("%u %u %u\n", old_distance, distance_cur[v], distance_prev[u] + w);
         // test for a change!
         if (old_distance != distance_cur[v]) {
+          printf("there is change\n");
           *noChange = FALSE;
         }
       }
@@ -153,10 +154,13 @@ void puller(std::vector<initial_vertex> * peeps, int blockSize, int blockNum){
 
     cudaMemcpy(distance_cur, cuda_distance_cur, vertices_length * sizeof(unsigned int),
              cudaMemcpyDeviceToHost);
+    cudaMemcpy(distance_prev, cuda_distance_prev, vertices_length * sizeof(unsigned int),
+              cudaMemcpyDeviceToHost);
 
     // print it out to test
     for(int i = 0; i < vertices_length; i++) {
       printf("Vertex[%u] = %u\n", i, distance_cur[i]);
+      printf("Vertex[%u] = %u\n", i, distance_prev[i]);
     }
 
     /* Deallocate. */
