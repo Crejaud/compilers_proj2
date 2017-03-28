@@ -172,6 +172,7 @@ __global__ void edge_process_in_core(unsigned int edges_length,
           }
         }
       }
+    }
 }
 
 void puller(std::vector<initial_vertex> * peeps, int blockSize, int blockNum, int sync, int smem){
