@@ -174,6 +174,7 @@ __global__ void edge_process_in_core(unsigned int edges_length,
         }
       }
 }
+void puller(std::vector<initial_vertex> * peeps, int blockSize, int blockNum, SyncMode syncMethod, SmemMode smemMethod);
 
 void puller(std::vector<initial_vertex> * peeps, int blockSize, int blockNum, SyncMode syncMethod, SmemMode smemMethod){
     /* Will use these arrays instead of a vector
