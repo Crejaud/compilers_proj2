@@ -40,10 +40,12 @@ __global__ void edge_process_out_of_core_shared_memory(unsigned int edges_length
 
       if (is_distance_infinity[u] == TRUE) {
         s_data[threadIdx.x] = -1;
-        break;
+      }
+      else {
+        s_data[threadIdx.x] = min(distance_cur[v], distance_prev[u] + w);
       }
 
-      s_data[threadIdx.x] = min(distance_cur[v], distance_prev[u] + w);
+      printf("s_data at %u is %u\n", threadIdx.x, s_data[threadIdx.x]);
 
       __syncthreads();
 
@@ -77,7 +79,9 @@ __global__ void edge_process_out_of_core_shared_memory(unsigned int edges_length
       }
       // i is the last element
       else {
+        printf("the min for dest %u is %u\n", dest[i], s_data[threadIdx.x]);
         int old_distance = atomicMin(&distance_cur[v], s_data[threadIdx.x]);
+        atomicMin(&is_distance_infinity[v], FALSE);
         // test for a change!
         if (old_distance != distance_cur[v]) {
           //printf("there is change\n");
@@ -280,6 +284,7 @@ void puller(std::vector<initial_vertex> * peeps, int blockSize, int blockNum, in
       // shared memory
       else if (smem == 1) {
         for (int i = 1; i < vertices_length; i++) {
+          printf("pass %d\n", i);
           edge_process_out_of_core_shared_memory<<<blockNum, blockSize, blockSize * sizeof(unsigned int)>>>(edges_length, cuda_edges_src,
                                               cuda_edges_dest, cuda_edges_weight,
                                               cuda_distance_prev, cuda_distance_cur,
