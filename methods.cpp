@@ -1,3 +1,3 @@
 enum class ProcessingType {Push, Neighbor, Own, Unknown};
-enum SyncMode {InCore, OutOfCore};
-enum SmemMode {UseSmem, UseNoSmem};
+enum class SyncMode {InCore, OutOfCore};
+enum class SmemMode {UseSmem, UseNoSmem};
