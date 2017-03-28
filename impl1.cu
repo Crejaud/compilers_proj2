@@ -39,27 +39,27 @@ __global__ void edge_process_out_of_core_shared_memory(unsigned int edges_length
       unsigned int w = weight[i];
 
       if (is_distance_infinity[u] == TRUE) {
-        s_data[warp_id] = -1;
+        s_data[threadIdx.x] = -1;
       }
       else {
-        s_data[warp_id] = min(distance_cur[v], distance_prev[u] + w);
+        s_data[threadIdx.x] = min(distance_cur[v], distance_prev[u] + w);
       }
 
-      printf("s_data at %u is %u, lane %u\n", warp_id, s_data[warp_id], lane);
+      printf("s_data at %u is %u, lane %u, i %u\n", warp_id, s_data[threadIdx.x], lane, i);
 
       __syncthreads();
 
       // segmented scan to find minimum
       if (lane >= 1 && dest[i] == dest[i - 1])
-        s_data[warp_id] = min(s_data[warp_id], s_data[warp_id-1]);
+        s_data[threadIdx.x] = min(s_data[threadIdx.x], s_data[threadIdx.x-1]);
       if (lane >= 2 && dest[i] == dest[i - 2])
-        s_data[warp_id] = min(s_data[warp_id], s_data[warp_id-2]);
+        s_data[threadIdx.x] = min(s_data[threadIdx.x], s_data[threadIdx.x-2]);
       if (lane >= 4 && dest[i] == dest[i - 4])
-        s_data[warp_id] = min(s_data[warp_id], s_data[warp_id-4]);
+        s_data[threadIdx.x] = min(s_data[threadIdx.x], s_data[threadIdx.x-4]);
       if (lane >= 8 && dest[i] == dest[i - 8])
-        s_data[warp_id] = min(s_data[warp_id], s_data[warp_id-8]);
+        s_data[threadIdx.x] = min(s_data[threadIdx.x], s_data[threadIdx.x-8]);
       if (lane >= 16 && dest[i] == dest[i - 16])
-        s_data[warp_id] = min(s_data[warp_id], s_data[warp_id-16]);
+        s_data[threadIdx.x] = min(s_data[threadIdx.x], s_data[threadIdx.x-16]);
 
       __syncthreads();
 
@@ -67,8 +67,8 @@ __global__ void edge_process_out_of_core_shared_memory(unsigned int edges_length
       if (i + 1 < edges_length) {
         // this thread is the last thread for the segment, so it holds the min
         if (dest[i] != dest[i + 1]) {
-          printf("the min for dest %u is %u\n", dest[i], s_data[warp_id]);
-          int old_distance = atomicMin(&distance_cur[v], s_data[warp_id]);
+          printf("the min for dest %u is %u\n", dest[i], s_data[threadIdx.x]);
+          int old_distance = atomicMin(&distance_cur[v], s_data[threadIdx.x]);
           atomicMin(&is_distance_infinity[v], FALSE);
           // test for a change!
           if (old_distance != distance_cur[v]) {
@@ -79,8 +79,8 @@ __global__ void edge_process_out_of_core_shared_memory(unsigned int edges_length
       }
       // i is the last element
       else {
-        printf("the min for dest %u is %u\n", dest[i], s_data[warp_id]);
-        int old_distance = atomicMin(&distance_cur[v], s_data[warp_id]);
+        printf("the min for dest %u is %u\n", dest[i], s_data[threadIdx.x]);
+        int old_distance = atomicMin(&distance_cur[v], s_data[threadIdx.x]);
         atomicMin(&is_distance_infinity[v], FALSE);
         // test for a change!
         if (old_distance != distance_cur[v]) {
