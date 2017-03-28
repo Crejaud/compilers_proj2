@@ -162,7 +162,7 @@ int main( int argc, char** argv )
 
 		// print it out to test
     char outputStr[100];
-    for(int i = 0; i < parsedGraph->size(); i++) {
+    for(int i = 0; i < parsedGraph.size(); i++) {
       sprintf(outputStr, "%u : %u\n", i, distance[i]);
       outputFile << outputStr;
     }
