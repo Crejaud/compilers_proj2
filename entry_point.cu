@@ -72,7 +72,7 @@ int main( int argc, char** argv )
 				else{
            std::cerr << "\n Un-recognized method parameter value \n\n";
            exit;
-         }   
+         }
 			}
 			else if ( !strcmp(argv[iii], "--sync") && iii != argc-1 ) {
 				if ( !strcmp(argv[iii+1], "incore") )
@@ -82,7 +82,7 @@ int main( int argc, char** argv )
 				else{
            std::cerr << "\n Un-recognized sync parameter value \n\n";
            exit;
-         }  
+         }
 
 			}
 			else if ( !strcmp(argv[iii], "--usesmem") && iii != argc-1 ) {
@@ -93,7 +93,7 @@ int main( int argc, char** argv )
         else{
            std::cerr << "\n Un-recognized usesmem parameter value \n\n";
            exit;
-         }  
+         }
 			}
 			else if( !strcmp( argv[iii], "--input" ) && iii != argc-1 /*is not the last one*/)
 				openFileToAccess< std::ifstream >( inputFile, std::string( argv[iii+1] ) );
@@ -140,7 +140,7 @@ int main( int argc, char** argv )
 
 		switch(processingMethod){
 		case ProcessingType::Push:
-		    puller(&parsedGraph, bsize, bcount);
+		    puller(&parsedGraph, bsize, bcount, syncMethod, smemMethod);
 		    break;
 		case ProcessingType::Neighbor:
 		    neighborHandler(&parsedGraph, bsize, bcount);

@@ -9,7 +9,87 @@
 #define TRUE 1
 #define FALSE 0
 
-__global__ void edge_process(unsigned int edges_length,
+enum SyncMode {InCore, OutOfCore};
+enum SmemMode {UseSmem, UseNoSmem};
+
+/* Edge process out of core with shared memory */
+__global__ void edge_process_out_of_core_shared_memory(unsigned int edges_length,
+                            unsigned int *src,
+                            unsigned int *dest,
+                            unsigned int *weight,
+                            unsigned int *distance_prev,
+                            unsigned int *distance_cur,
+                            int *noChange,
+                            int *is_distance_infinity) {
+    extern __shared__ unsigned int s_data[ ];
+
+    unsigned int thread_id = blockDim.x * blockIdx.x + threadIdx.x;
+    unsigned int thread_num = blockDim.x * gridDim.x;
+
+    unsigned int warp_id = thread_id % 32 == 0 ? thread_id/32 : thread_id/32 + 1;
+    unsigned int warp_num = thread_num % 32 == 0 ? thread_num/32 : thread_num/32 + 1;
+
+    unsigned int load = edges_length % warp_num ? edges_length / warp_num + 1 : edges_length / warp_num;
+    unsigned int beg = load * warp_id;
+    unsigned int end = min(edges_length, beg + load);
+    unsigned int lane = thread_id % 32;
+    beg += lane;
+
+    unsigned int i;
+    for (i = beg; i < end; i += 32) {
+      unsigned int u = src[i];
+      unsigned int v = dest[i];
+      unsigned int w = weight[i];
+
+      if (is_distance_infinity[u] == TRUE) {
+        break;
+      }
+
+      s_data[threadIdx.x] = min(distance_cur[v], distance_prev[u] + w);
+
+      __syncthreads();
+
+      // segmented scan to find minimum
+      if (lane >= 1 && dest[i] == dest[i - 1])
+        s_data[threadIdx.x] = min(s_data[threadIdx.x], smem[threadIdx.x-1]);
+      if (lane >= 2 && dest[i] == dest[i - 2])
+        s_data[threadIdx.x] = min(s_data[threadIdx.x], smem[threadIdx.x-2]);
+      if (lane >= 4 && dest[i] == dest[i - 4])
+        s_data[threadIdx.x] = min(s_data[threadIdx.x], smem[threadIdx.x-4]);
+      if (lane >= 8 && dest[i] == dest[i - 8])
+        s_data[threadIdx.x] = min(s_data[threadIdx.x], smem[threadIdx.x-8]);
+      if (lane >= 16 && dest[i] == dest[i - 16])
+        s_data[threadIdx.x] = min(s_data[threadIdx.x], smem[threadIdx.x-16]);
+
+      __syncthreads();
+
+      // i is in bounds
+      if (i + 1 < edges_length) {
+        // this thread is the last thread for the segment, so it holds the min
+        if (dest[i] != dest[i + 1]) {
+          printf("the min for dest %u is %u", dest[i], smem[threadIdx.x]);
+          int old_distance = atomicMin(&distance_cur[v], smem[threadIdx.x]);
+          // test for a change!
+          if (old_distance != distance_cur[v]) {
+            //printf("there is change\n");
+            *noChange = FALSE;
+          }
+        }
+      }
+      // i is the last element
+      else {
+        int old_distance = atomicMin(&distance_cur[v], smem[threadIdx.x]);
+        // test for a change!
+        if (old_distance != distance_cur[v]) {
+          //printf("there is change\n");
+          *noChange = FALSE;
+        }
+      }
+    }
+}
+
+/* Edge process out of core with no shared memory */
+__global__ void edge_process_out_of_core(unsigned int edges_length,
                             unsigned int *src,
                             unsigned int *dest,
                             unsigned int *weight,
@@ -26,6 +106,8 @@ __global__ void edge_process(unsigned int edges_length,
     unsigned int load = edges_length % warp_num ? edges_length / warp_num + 1 : edges_length / warp_num;
     unsigned int beg = load * warp_id;
     unsigned int end = min(edges_length, beg + load);
+    unsigned int lane = thread_id % 32;
+    beg += lane;
 
     unsigned int i;
     for (i = beg; i < end; i += 32) {
@@ -50,7 +132,53 @@ __global__ void edge_process(unsigned int edges_length,
     }
 }
 
-void puller(std::vector<initial_vertex> * peeps, int blockSize, int blockNum){
+/* Edge process in core */
+__global__ void edge_process_in_core(unsigned int edges_length,
+                            unsigned int vertices_length,
+                            unsigned int *src,
+                            unsigned int *dest,
+                            unsigned int *weight,
+                            unsigned int *distance,
+                            int *noChange,
+                            int *is_distance_infinity) {
+    unsigned int thread_id = blockDim.x * blockIdx.x + threadIdx.x;
+    unsigned int thread_num = blockDim.x * gridDim.x;
+
+    unsigned int warp_id = thread_id % 32 == 0 ? thread_id/32 : thread_id/32 + 1;
+    unsigned int warp_num = thread_num % 32 == 0 ? thread_num/32 : thread_num/32 + 1;
+
+    unsigned int load = edges_length % warp_num ? edges_length / warp_num + 1 : edges_length / warp_num;
+    unsigned int beg = load * warp_id;
+    unsigned int end = min(edges_length, beg + load);
+
+    unsigned int i;
+    for (unsigned int j = 1; j < vertices_length; j++) {
+      __syncthreads();
+      for (i = beg; i < end; i += 32) {
+        unsigned int u = src[i];
+        unsigned int v = dest[i];
+        unsigned int w = weight[i];
+        if (is_distance_infinity[u] == TRUE) {
+          break;
+        }
+        unsigned int temp_dist = distance[u] + w;
+        if (temp_dist < distance[v]) {
+          // relax
+          //printf("%u %u\n", distance_cur[v], distance_prev[u] + w);
+          int old_distance = atomicMin(&distance_cur[v], distance_prev[u] + w);
+          atomicMin(&is_distance_infinity[v], FALSE);
+          //printf("%u %u %u %d\n", old_distance, distance_cur[v], distance_prev[u] + w, is_distance_infinity[v]);
+          // test for a change!
+          if (old_distance != distance_cur[v]) {
+            //printf("there is change\n");
+            *noChange = FALSE;
+          }
+        }
+      }
+}
+
+void puller(std::vector<initial_vertex> * peeps, int blockSize, int blockNum,
+            enum SyncMode syncMethod, enum SmemMode smemMethod){
     /* Will use these arrays instead of a vector
     * edges_src : array of all edges (indexed 0 to n) where the value is the vertex source index of the edge (since edges are directed)
     * edges_dest : same as above, except it tells the vertex destination index
@@ -132,22 +260,61 @@ void puller(std::vector<initial_vertex> * peeps, int blockSize, int blockNum){
      * Do all the things here!
      **/
 
-    // out-of-core
-    for (int i = 1; i < vertices_length; i++) {
-    	edge_process<<<blockNum, blockSize>>>(edges_length, cuda_edges_src,
-                                          cuda_edges_dest, cuda_edges_weight,
-                                          cuda_distance_prev, cuda_distance_cur,
-                                          cuda_noChange, cuda_is_distance_infinity);
-      cudaMemcpy(noChange, cuda_noChange, sizeof(int), cudaMemcpyDeviceToHost);
-	    if (*noChange == TRUE) break;
-      *noChange = TRUE;
-      cudaMemcpy(cuda_noChange, noChange, sizeof(int), cudaMemcpyHostToDevice);
+    switch(syncMethod){
+   		case SyncMode::OutOfCore:
+          switch(smemMethod) {
+            case SmemMode::UseSmem:
+              // Using shared memory & Out of core
+              for (int i = 1; i < vertices_length; i++) {
+                edge_process_out_of_core_shared_memory<<<blockNum, blockSize, blockSize * sizeof(unsigned int)>>>(edges_length, cuda_edges_src,
+                                                    cuda_edges_dest, cuda_edges_weight,
+                                                    cuda_distance_prev, cuda_distance_cur,
+                                                    cuda_noChange, cuda_is_distance_infinity);
+                cudaMemcpy(noChange, cuda_noChange, sizeof(int), cudaMemcpyDeviceToHost);
+                if (*noChange == TRUE) break;
+                *noChange = TRUE;
+                cudaMemcpy(cuda_noChange, noChange, sizeof(int), cudaMemcpyHostToDevice);
 
-      // get current distance and copy it to both cuda_distance_prev and cuda_distance_cur
-      cudaMemcpy(distance_cur, cuda_distance_cur, vertices_length * sizeof(unsigned int), cudaMemcpyDeviceToHost);
-      cudaMemcpy(cuda_distance_prev, distance_cur, vertices_length * sizeof(unsigned int), cudaMemcpyHostToDevice);
-      cudaMemcpy(cuda_distance_cur, distance_cur, vertices_length * sizeof(unsigned int), cudaMemcpyHostToDevice);
-    }
+                // get current distance and copy it to both cuda_distance_prev and cuda_distance_cur
+                cudaMemcpy(distance_cur, cuda_distance_cur, vertices_length * sizeof(unsigned int), cudaMemcpyDeviceToHost);
+                cudaMemcpy(cuda_distance_prev, distance_cur, vertices_length * sizeof(unsigned int), cudaMemcpyHostToDevice);
+                cudaMemcpy(cuda_distance_cur, distance_cur, vertices_length * sizeof(unsigned int), cudaMemcpyHostToDevice);
+              }
+              break;
+            case SmemMode::UseNoSmem:
+              // No shared memory & Out of Core
+              for (int i = 1; i < vertices_length; i++) {
+                edge_process_out_of_core<<<blockNum, blockSize>>>(edges_length, cuda_edges_src,
+                                                    cuda_edges_dest, cuda_edges_weight,
+                                                    cuda_distance_prev, cuda_distance_cur,
+                                                    cuda_noChange, cuda_is_distance_infinity);
+                cudaMemcpy(noChange, cuda_noChange, sizeof(int), cudaMemcpyDeviceToHost);
+                if (*noChange == TRUE) break;
+                *noChange = TRUE;
+                cudaMemcpy(cuda_noChange, noChange, sizeof(int), cudaMemcpyHostToDevice);
+
+                // get current distance and copy it to both cuda_distance_prev and cuda_distance_cur
+                cudaMemcpy(distance_cur, cuda_distance_cur, vertices_length * sizeof(unsigned int), cudaMemcpyDeviceToHost);
+                cudaMemcpy(cuda_distance_prev, distance_cur, vertices_length * sizeof(unsigned int), cudaMemcpyHostToDevice);
+                cudaMemcpy(cuda_distance_cur, distance_cur, vertices_length * sizeof(unsigned int), cudaMemcpyHostToDevice);
+              }
+              break;
+            default:
+              printf("no Smem method in out of core!");
+              break;
+          }
+   		    break;
+   		case SyncMode::InCore:
+          // In-core (doesnt matter whether it is using shared memory or not)
+          edge_process_in_core<<<blockNum, blockSize>>>(edges_length, vertices_length,
+                                              cuda_edges_src, cuda_edges_dest,
+                                              cuda_edges_weight, cuda_distance_cur,
+                                              cuda_noChange, cuda_is_distance_infinity);
+   		    break;
+   		default:
+   		    printf("no syncing method!");
+          break;
+ 		}
 
     cudaDeviceSynchronize();
     std::cout << "Took " << getTime() << "ms.\n";
