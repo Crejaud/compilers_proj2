@@ -148,7 +148,7 @@ int main( int argc, char** argv )
 		 * Process the graph.
 		 ********************************/
 
-		unsigned int * distance = (unsigned int *) malloc(parsedGraph->size() * sizeof(unsigned int));
+		unsigned int * distance = (unsigned int *) malloc(parsedGraph.size() * sizeof(unsigned int));
 		switch(processingMethod){
 		case ProcessingType::Push:
 		    puller(&parsedGraph, bsize, bcount, sync, smem, distance);
