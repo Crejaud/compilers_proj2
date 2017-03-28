@@ -174,9 +174,8 @@ __global__ void edge_process_in_core(unsigned int edges_length,
         }
       }
 }
-void puller(std::vector<initial_vertex> * peeps, int blockSize, int blockNum, SyncMode syncMethod, SmemMode smemMethod);
 
-void puller(std::vector<initial_vertex> * peeps, int blockSize, int blockNum, SyncMode syncMethod, SmemMode smemMethod){
+void puller(std::vector<initial_vertex> * peeps, int blockSize, int blockNum, int sync, int smem){
     /* Will use these arrays instead of a vector
     * edges_src : array of all edges (indexed 0 to n) where the value is the vertex source index of the edge (since edges are directed)
     * edges_dest : same as above, except it tells the vertex destination index
@@ -257,62 +256,64 @@ void puller(std::vector<initial_vertex> * peeps, int blockSize, int blockNum, Sy
     /*
      * Do all the things here!
      **/
-
-    switch(syncMethod){
-   		case SyncMode::OutOfCore:
-          switch(smemMethod) {
-            case SmemMode::UseSmem:
-              // Using shared memory & Out of core
-              for (int i = 1; i < vertices_length; i++) {
-                edge_process_out_of_core_shared_memory<<<blockNum, blockSize, blockSize * sizeof(unsigned int)>>>(edges_length, cuda_edges_src,
-                                                    cuda_edges_dest, cuda_edges_weight,
-                                                    cuda_distance_prev, cuda_distance_cur,
-                                                    cuda_noChange, cuda_is_distance_infinity);
-                cudaMemcpy(noChange, cuda_noChange, sizeof(int), cudaMemcpyDeviceToHost);
-                if (*noChange == TRUE) break;
-                *noChange = TRUE;
-                cudaMemcpy(cuda_noChange, noChange, sizeof(int), cudaMemcpyHostToDevice);
-
-                // get current distance and copy it to both cuda_distance_prev and cuda_distance_cur
-                cudaMemcpy(distance_cur, cuda_distance_cur, vertices_length * sizeof(unsigned int), cudaMemcpyDeviceToHost);
-                cudaMemcpy(cuda_distance_prev, distance_cur, vertices_length * sizeof(unsigned int), cudaMemcpyHostToDevice);
-                cudaMemcpy(cuda_distance_cur, distance_cur, vertices_length * sizeof(unsigned int), cudaMemcpyHostToDevice);
-              }
-              break;
-            case SmemMode::UseNoSmem:
-              // No shared memory & Out of Core
-              for (int i = 1; i < vertices_length; i++) {
-                edge_process_out_of_core<<<blockNum, blockSize>>>(edges_length, cuda_edges_src,
-                                                    cuda_edges_dest, cuda_edges_weight,
-                                                    cuda_distance_prev, cuda_distance_cur,
-                                                    cuda_noChange, cuda_is_distance_infinity);
-                cudaMemcpy(noChange, cuda_noChange, sizeof(int), cudaMemcpyDeviceToHost);
-                if (*noChange == TRUE) break;
-                *noChange = TRUE;
-                cudaMemcpy(cuda_noChange, noChange, sizeof(int), cudaMemcpyHostToDevice);
-
-                // get current distance and copy it to both cuda_distance_prev and cuda_distance_cur
-                cudaMemcpy(distance_cur, cuda_distance_cur, vertices_length * sizeof(unsigned int), cudaMemcpyDeviceToHost);
-                cudaMemcpy(cuda_distance_prev, distance_cur, vertices_length * sizeof(unsigned int), cudaMemcpyHostToDevice);
-                cudaMemcpy(cuda_distance_cur, distance_cur, vertices_length * sizeof(unsigned int), cudaMemcpyHostToDevice);
-              }
-              break;
-            default:
-              printf("no Smem method in out of core!");
-              break;
-          }
-   		    break;
-   		case SyncMode::InCore:
-          // In-core (doesnt matter whether it is using shared memory or not)
-          edge_process_in_core<<<blockNum, blockSize>>>(edges_length, vertices_length,
-                                              cuda_edges_src, cuda_edges_dest,
-                                              cuda_edges_weight, cuda_distance_cur,
+    // sync is out of core
+    if (sync == 0) {
+      // no shared memory
+      if (smem == 0) {
+        for (int i = 1; i < vertices_length; i++) {
+          edge_process_out_of_core<<<blockNum, blockSize>>>(edges_length, cuda_edges_src,
+                                              cuda_edges_dest, cuda_edges_weight,
+                                              cuda_distance_prev, cuda_distance_cur,
                                               cuda_noChange, cuda_is_distance_infinity);
-   		    break;
-   		default:
-   		    printf("no syncing method!");
-          break;
- 		}
+          cudaMemcpy(noChange, cuda_noChange, sizeof(int), cudaMemcpyDeviceToHost);
+          if (*noChange == TRUE) break;
+          *noChange = TRUE;
+          cudaMemcpy(cuda_noChange, noChange, sizeof(int), cudaMemcpyHostToDevice);
+
+          // get current distance and copy it to both cuda_distance_prev and cuda_distance_cur
+          cudaMemcpy(distance_cur, cuda_distance_cur, vertices_length * sizeof(unsigned int), cudaMemcpyDeviceToHost);
+          cudaMemcpy(cuda_distance_prev, distance_cur, vertices_length * sizeof(unsigned int), cudaMemcpyHostToDevice);
+          cudaMemcpy(cuda_distance_cur, distance_cur, vertices_length * sizeof(unsigned int), cudaMemcpyHostToDevice);
+        }
+      }
+      // shared memory
+      else if (smem == 1) {
+        for (int i = 1; i < vertices_length; i++) {
+          edge_process_out_of_core_shared_memory<<<blockNum, blockSize, blockSize * sizeof(unsigned int)>>>(edges_length, cuda_edges_src,
+                                              cuda_edges_dest, cuda_edges_weight,
+                                              cuda_distance_prev, cuda_distance_cur,
+                                              cuda_noChange, cuda_is_distance_infinity);
+          cudaMemcpy(noChange, cuda_noChange, sizeof(int), cudaMemcpyDeviceToHost);
+          if (*noChange == TRUE) break;
+          *noChange = TRUE;
+          cudaMemcpy(cuda_noChange, noChange, sizeof(int), cudaMemcpyHostToDevice);
+
+          // get current distance and copy it to both cuda_distance_prev and cuda_distance_cur
+          cudaMemcpy(distance_cur, cuda_distance_cur, vertices_length * sizeof(unsigned int), cudaMemcpyDeviceToHost);
+          cudaMemcpy(cuda_distance_prev, distance_cur, vertices_length * sizeof(unsigned int), cudaMemcpyHostToDevice);
+          cudaMemcpy(cuda_distance_cur, distance_cur, vertices_length * sizeof(unsigned int), cudaMemcpyHostToDevice);
+        }
+      }
+      // no shared memory
+      else {
+        printf("No shared memory\n");
+        exit(1);
+      }
+
+    }
+    // sync is in core
+    else if (sync == 1) {
+      edge_process_in_core<<<blockNum, blockSize>>>(edges_length, vertices_length,
+                                          cuda_edges_src, cuda_edges_dest,
+                                          cuda_edges_weight, cuda_distance_cur,
+                                          cuda_noChange, cuda_is_distance_infinity);
+    }
+
+    else {
+      // no syncing
+      printf("No syncing tag\n");
+      exit(1);
+    }
 
     cudaDeviceSynchronize();
     std::cout << "Took " << getTime() << "ms.\n";

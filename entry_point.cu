@@ -16,8 +16,14 @@
 
 #include "methods.cpp"
 
+enum class ProcessingType {Push, Neighbor, Own, Unknown};
+enum SyncMode {InCore, OutOfCore};
+enum SmemMode {UseSmem, UseNoSmem};
 enum SyncMode syncMethod;
 enum SmemMode smemMethod;
+
+int sync = -1;
+int smem = -1;
 
 // Open files safely.
 template <typename T_file>
@@ -74,10 +80,14 @@ int main( int argc, char** argv )
          }
 			}
 			else if ( !strcmp(argv[iii], "--sync") && iii != argc-1 ) {
-				if ( !strcmp(argv[iii+1], "incore") )
+				if ( !strcmp(argv[iii+1], "incore") ) {
 				        syncMethod = InCore;
-				if ( !strcmp(argv[iii+1], "outcore") )
+								sync = 1;
+							}
+				if ( !strcmp(argv[iii+1], "outcore") ) {
     				        syncMethod = OutOfCore;
+										sync = 0;
+									}
 				else{
            std::cerr << "\n Un-recognized sync parameter value \n\n";
            exit;
@@ -85,10 +95,14 @@ int main( int argc, char** argv )
 
 			}
 			else if ( !strcmp(argv[iii], "--usesmem") && iii != argc-1 ) {
-				if ( !strcmp(argv[iii+1], "yes") )
+				if ( !strcmp(argv[iii+1], "yes") ) {
 				        smemMethod = UseSmem;
-				if ( !strcmp(argv[iii+1], "no") )
+								smem = 1;
+							}
+				if ( !strcmp(argv[iii+1], "no") ) {
     				        smemMethod = UseNoSmem;
+										smem = 0;
+									}
         else{
            std::cerr << "\n Un-recognized usesmem parameter value \n\n";
            exit;
@@ -139,7 +153,7 @@ int main( int argc, char** argv )
 
 		switch(processingMethod){
 		case ProcessingType::Push:
-		    puller(&parsedGraph, bsize, bcount, syncMethod, smemMethod);
+		    puller(&parsedGraph, bsize, bcount, sync, smem);
 		    break;
 		case ProcessingType::Neighbor:
 		    neighborHandler(&parsedGraph, bsize, bcount);
