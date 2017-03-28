@@ -127,6 +127,7 @@ __global__ void edge_process_out_of_core(unsigned int edges_length,
       unsigned int u = src[i];
       unsigned int v = dest[i];
       unsigned int w = weight[i];
+      printf("inside\n");
       if (is_distance_infinity[u] == TRUE) {
         break;
       }
