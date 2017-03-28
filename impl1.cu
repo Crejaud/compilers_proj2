@@ -64,7 +64,7 @@ __global__ void edge_process_out_of_core_shared_memory(unsigned int edges_length
       if (i + 1 < edges_length) {
         // this thread is the last thread for the segment, so it holds the min
         if (dest[i] != dest[i + 1]) {
-          printf("the min for dest %u is %u", dest[i], s_data[threadIdx.x]);
+          printf("the min for dest %u is %u\n", dest[i], s_data[threadIdx.x]);
           int old_distance = atomicMin(&distance_cur[v], s_data[threadIdx.x]);
           // test for a change!
           if (old_distance != distance_cur[v]) {
