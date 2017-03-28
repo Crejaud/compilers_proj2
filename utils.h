@@ -10,7 +10,3 @@ double getTime();
 }
 #endif
 #endif	//	SIMPLETIMER_H
-
-enum class ProcessingType {Push, Neighbor, Own, Unknown};
-enum SyncMode {InCore, OutOfCore};
-enum SmemMode {UseSmem, UseNoSmem};
