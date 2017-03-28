@@ -148,10 +148,10 @@ int main( int argc, char** argv )
 		 * Process the graph.
 		 ********************************/
 
-
+		unsigned int * distance = (unsigned int *) malloc(parsedGraph->size() * sizeof(unsigned int));
 		switch(processingMethod){
 		case ProcessingType::Push:
-		    puller(&parsedGraph, bsize, bcount, sync, smem, outputFile);
+		    puller(&parsedGraph, bsize, bcount, sync, smem, outputFile, distance);
 		    break;
 		case ProcessingType::Neighbor:
 		    neighborHandler(&parsedGraph, bsize, bcount);
@@ -159,6 +159,13 @@ int main( int argc, char** argv )
 		default:
 		    own(&parsedGraph, bsize, bcount);
 		}
+
+		// print it out to test
+    char outputStr[100];
+    for(int i = 0; i < parseGraph->size(); i++) {
+      sprintf(outputStr, "%u : %u\n", i, distance[i]);
+      outputFile << outputStr;
+    }
 
 		/********************************
 		 * It's done here.

@@ -175,7 +175,7 @@ __global__ void edge_process_in_core(unsigned int edges_length,
     }
 }
 
-void puller(std::vector<initial_vertex> * peeps, int blockSize, int blockNum, int sync, int smem, std::ofstream outputFile){
+void puller(std::vector<initial_vertex> * peeps, int blockSize, int blockNum, int sync, int smem, std::ofstream outputFile, unsigned int *distance_cur){
     /* Will use these arrays instead of a vector
     * edges_src : array of all edges (indexed 0 to n) where the value is the vertex source index of the edge (since edges are directed)
     * edges_dest : same as above, except it tells the vertex destination index
@@ -189,7 +189,6 @@ void puller(std::vector<initial_vertex> * peeps, int blockSize, int blockNum, in
     unsigned int edges_length = 0;
     unsigned int vertices_length = peeps->size();
     unsigned int *distance_prev = (unsigned int *) malloc(vertices_length * sizeof(unsigned int));
-    unsigned int *distance_cur = (unsigned int *) malloc(vertices_length * sizeof(unsigned int));
     int *noChange = (int *) malloc(sizeof(int));
     int *is_distance_infinity = (int *) malloc(vertices_length * sizeof(int));
 
@@ -341,7 +340,6 @@ void puller(std::vector<initial_vertex> * peeps, int blockSize, int blockNum, in
     free(edges_dest);
     free(edges_weight);
     free(distance_prev);
-    free(distance_cur);
     free(noChange);
     free(is_distance_infinity);
 }
