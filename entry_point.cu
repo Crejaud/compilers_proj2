@@ -14,10 +14,7 @@
 #include "impl2.cu"
 #include "impl1.cu"
 
-enum class ProcessingType {Push, Neighbor, Own, Unknown};
-enum SyncMode {InCore, OutOfCore};
 enum SyncMode syncMethod;
-enum SmemMode {UseSmem, UseNoSmem};
 enum SmemMode smemMethod;
 
 // Open files safely.
