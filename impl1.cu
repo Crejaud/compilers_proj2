@@ -175,7 +175,7 @@ __global__ void edge_process_in_core(unsigned int edges_length,
     }
 }
 
-void puller(std::vector<initial_vertex> * peeps, int blockSize, int blockNum, int sync, int smem){
+void puller(std::vector<initial_vertex> * peeps, int blockSize, int blockNum, int sync, int smem, std::ofstream outputFile){
     /* Will use these arrays instead of a vector
     * edges_src : array of all edges (indexed 0 to n) where the value is the vertex source index of the edge (since edges are directed)
     * edges_dest : same as above, except it tells the vertex destination index
@@ -322,8 +322,10 @@ void puller(std::vector<initial_vertex> * peeps, int blockSize, int blockNum, in
              cudaMemcpyDeviceToHost);
 
     // print it out to test
+    char outputStr[100];
     for(int i = 0; i < vertices_length; i++) {
-      printf("Vertex[%u] = %u\n", i, distance_cur[i]);
+      sprintf(outputStr, "%u : %u\n", i, distance_cur[i]);
+      outputFile << outputStr;
     }
 
     /* Deallocate. */
