@@ -14,8 +14,6 @@
 #include "impl2.cu"
 #include "impl1.cu"
 
-#include "methods.cpp"
-
 enum class ProcessingType {Push, Neighbor, Own, Unknown};
 enum SyncMode {InCore, OutOfCore};
 enum SmemMode {UseSmem, UseNoSmem};
