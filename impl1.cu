@@ -45,7 +45,7 @@ __global__ void edge_process_out_of_core_shared_memory(unsigned int edges_length
         s_data[threadIdx.x] = min(distance_cur[v], distance_prev[u] + w);
       }
 
-      printf("s_data at %u is %u, lane %u, i %u\n", warp_id, s_data[threadIdx.x], lane, i);
+      printf("s_data at %u is %u, lane %u, i %u\n", threadIdx.x, s_data[threadIdx.x], lane, i);
 
       __syncthreads();
 
