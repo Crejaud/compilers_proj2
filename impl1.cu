@@ -39,6 +39,7 @@ __global__ void edge_process_out_of_core_shared_memory(unsigned int edges_length
       unsigned int w = weight[i];
 
       if (is_distance_infinity[u] == TRUE) {
+        s_data[threadIdx.x] = -1;
         break;
       }
 
@@ -66,6 +67,7 @@ __global__ void edge_process_out_of_core_shared_memory(unsigned int edges_length
         if (dest[i] != dest[i + 1]) {
           printf("the min for dest %u is %u\n", dest[i], s_data[threadIdx.x]);
           int old_distance = atomicMin(&distance_cur[v], s_data[threadIdx.x]);
+          atomicMin(&is_distance_infinity[v], FALSE);
           // test for a change!
           if (old_distance != distance_cur[v]) {
             //printf("there is change\n");
