@@ -165,11 +165,11 @@ __global__ void edge_process_in_core(unsigned int edges_length,
         if (temp_dist < distance[v]) {
           // relax
           //printf("%u %u\n", distance_cur[v], distance_prev[u] + w);
-          int old_distance = atomicMin(&distance_cur[v], distance_prev[u] + w);
+          int old_distance = atomicMin(&distance[v], distance[u] + w);
           atomicMin(&is_distance_infinity[v], FALSE);
           //printf("%u %u %u %d\n", old_distance, distance_cur[v], distance_prev[u] + w, is_distance_infinity[v]);
           // test for a change!
-          if (old_distance != distance_cur[v]) {
+          if (old_distance != distance[v]) {
             //printf("there is change\n");
             *noChange = FALSE;
           }
