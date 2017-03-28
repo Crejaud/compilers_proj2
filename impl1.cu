@@ -159,6 +159,7 @@ void puller(std::vector<initial_vertex> * peeps, int blockSize, int blockNum){
 
     // print it out to test
     for(int i = 0; i < vertices_length; i++) {
+      printf("test");
       printf("Vertex[%u] = %u\n", i, distance_cur[i]);
       printf("Vertex[%u] = %u\n", i, distance_prev[i]);
     }
