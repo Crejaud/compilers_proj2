@@ -33,9 +33,9 @@ __global__ void edge_process(unsigned int edges_length,
       unsigned int w = weight[i];
       if (distance_prev[u] + w < distance_prev[v]) {
         // relax
-        printf("%u %u", distance_cur[v], distance_prev[u] + w);
+        printf("%u %u\n", distance_cur[v], distance_prev[u] + w);
         int old_distance = atomicMin(&distance_cur[v], distance_prev[u] + w);
-        printf("%u %u %u", old_distance, distance_cur[v], distance_prev[u] + w);
+        printf("%u %u %u\n", old_distance, distance_cur[v], distance_prev[u] + w);
         // test for a change!
         if (old_distance != distance_cur[v]) {
           *noChange = FALSE;
