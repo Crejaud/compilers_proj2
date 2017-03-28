@@ -135,7 +135,7 @@ __global__ void edge_process_out_of_core(unsigned int edges_length,
         //printf("%u %u\n", distance_cur[v], distance_prev[u] + w);
         int old_distance = atomicMin(&distance_cur[v], distance_prev[u] + w);
         atomicMin(&is_distance_infinity[v], FALSE);
-        //printf("%u %u %u %d\n", old_distance, distance_cur[v], distance_prev[u] + w, is_distance_infinity[v]);
+        printf("%u %u %u %d\n", old_distance, distance_cur[v], distance_prev[u] + w, is_distance_infinity[v]);
         // test for a change!
         if (old_distance != distance_cur[v]) {
           //printf("there is change\n");
@@ -244,7 +244,7 @@ void puller(std::vector<initial_vertex> * peeps, int blockSize, int blockNum, in
         edges_src[edge_index] = peeps->at(i).nbrs[j].srcIndex;
         edges_dest[edge_index] = i;
         edges_weight[edge_index] = peeps->at(i).nbrs[j].edgeValue.weight;
-        printf("src: %u | dest: %u | weight: %u\n", edges_src[edge_index], edges_dest[edge_index], edges_weight[edge_index]);
+        //printf("src: %u | dest: %u | weight: %u\n", edges_src[edge_index], edges_dest[edge_index], edges_weight[edge_index]);
 
         edge_index++;
       }
