@@ -51,15 +51,15 @@ __global__ void edge_process_out_of_core_shared_memory(unsigned int edges_length
 
       // segmented scan to find minimum
       if (lane >= 1 && dest[i] == dest[i - 1])
-        s_data[threadIdx.x] = min(s_data[threadIdx.x], smem[threadIdx.x-1]);
+        s_data[threadIdx.x] = min(s_data[threadIdx.x], s_data[threadIdx.x-1]);
       if (lane >= 2 && dest[i] == dest[i - 2])
-        s_data[threadIdx.x] = min(s_data[threadIdx.x], smem[threadIdx.x-2]);
+        s_data[threadIdx.x] = min(s_data[threadIdx.x], s_data[threadIdx.x-2]);
       if (lane >= 4 && dest[i] == dest[i - 4])
-        s_data[threadIdx.x] = min(s_data[threadIdx.x], smem[threadIdx.x-4]);
+        s_data[threadIdx.x] = min(s_data[threadIdx.x], s_data[threadIdx.x-4]);
       if (lane >= 8 && dest[i] == dest[i - 8])
-        s_data[threadIdx.x] = min(s_data[threadIdx.x], smem[threadIdx.x-8]);
+        s_data[threadIdx.x] = min(s_data[threadIdx.x], s_data[threadIdx.x-8]);
       if (lane >= 16 && dest[i] == dest[i - 16])
-        s_data[threadIdx.x] = min(s_data[threadIdx.x], smem[threadIdx.x-16]);
+        s_data[threadIdx.x] = min(s_data[threadIdx.x], s_data[threadIdx.x-16]);
 
       __syncthreads();
 
@@ -67,8 +67,8 @@ __global__ void edge_process_out_of_core_shared_memory(unsigned int edges_length
       if (i + 1 < edges_length) {
         // this thread is the last thread for the segment, so it holds the min
         if (dest[i] != dest[i + 1]) {
-          printf("the min for dest %u is %u", dest[i], smem[threadIdx.x]);
-          int old_distance = atomicMin(&distance_cur[v], smem[threadIdx.x]);
+          printf("the min for dest %u is %u", dest[i], s_data[threadIdx.x]);
+          int old_distance = atomicMin(&distance_cur[v], s_data[threadIdx.x]);
           // test for a change!
           if (old_distance != distance_cur[v]) {
             //printf("there is change\n");
@@ -78,7 +78,7 @@ __global__ void edge_process_out_of_core_shared_memory(unsigned int edges_length
       }
       // i is the last element
       else {
-        int old_distance = atomicMin(&distance_cur[v], smem[threadIdx.x]);
+        int old_distance = atomicMin(&distance_cur[v], s_data[threadIdx.x]);
         // test for a change!
         if (old_distance != distance_cur[v]) {
           //printf("there is change\n");
@@ -178,7 +178,7 @@ __global__ void edge_process_in_core(unsigned int edges_length,
 }
 
 void puller(std::vector<initial_vertex> * peeps, int blockSize, int blockNum,
-            enum SyncMode syncMethod, enum SmemMode smemMethod){
+            SyncMode syncMethod, SmemMode smemMethod){
     /* Will use these arrays instead of a vector
     * edges_src : array of all edges (indexed 0 to n) where the value is the vertex source index of the edge (since edges are directed)
     * edges_dest : same as above, except it tells the vertex destination index
