@@ -150,12 +150,9 @@ void puller(std::vector<initial_vertex> * peeps, int blockSize, int blockNum){
 	    if (*noChange == TRUE) break;
       *noChange = TRUE;
       cudaMemcpy(cuda_noChange, noChange, sizeof(int), cudaMemcpyHostToDevice);
-      cudaMemcpy(distance_cur, cuda_distance_cur, vertices_length * sizeof(unsigned int),
-               cudaMemcpyDeviceToHost);
-      cudaMemcpy(distance_prev, cuda_distance_prev, vertices_length * sizeof(unsigned int),
-                        cudaMemcpyDeviceToHost);
-	    swap_arrays(&distance_prev, &distance_cur);
-      cudaMemcpy(cuda_distance_prev, distance_prev, vertices_length * sizeof(unsigned int), cudaMemcpyHostToDevice);
+      cudaMemcpy(distance_cur, cuda_distance_cur, vertices_length * sizeof(unsigned int), cudaMemcpyDeviceToHost);
+	    //swap_arrays(&distance_prev, &distance_cur);
+      cudaMemcpy(cuda_distance_prev, distance_cur, vertices_length * sizeof(unsigned int), cudaMemcpyHostToDevice);
       cudaMemcpy(cuda_distance_cur, distance_cur, vertices_length * sizeof(unsigned int), cudaMemcpyHostToDevice);
     }
 
