@@ -82,7 +82,7 @@ int main( int argc, char** argv )
 				        syncMethod = InCore;
 								sync = 1;
 							}
-				if ( !strcmp(argv[iii+1], "outcore") ) {
+				else if ( !strcmp(argv[iii+1], "outcore") ) {
     				        syncMethod = OutOfCore;
 										sync = 0;
 									}
@@ -97,7 +97,7 @@ int main( int argc, char** argv )
 				        smemMethod = UseSmem;
 								smem = 1;
 							}
-				if ( !strcmp(argv[iii+1], "no") ) {
+				else if ( !strcmp(argv[iii+1], "no") ) {
     				        smemMethod = UseNoSmem;
 										smem = 0;
 									}
