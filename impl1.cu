@@ -304,6 +304,9 @@ void puller(std::vector<initial_vertex> * peeps, int blockSize, int blockNum, in
 
           // get current distance and copy it to both cuda_distance_prev and cuda_distance_cur
           cudaMemcpy(distance_cur, cuda_distance_cur, vertices_length * sizeof(unsigned int), cudaMemcpyDeviceToHost);
+          for(int j = 0; j < vertices_length; j++) {
+            printf("%u\n", distance_cur[j]);
+          }
           cudaMemcpy(cuda_distance_prev, distance_cur, vertices_length * sizeof(unsigned int), cudaMemcpyHostToDevice);
           cudaMemcpy(cuda_distance_cur, distance_cur, vertices_length * sizeof(unsigned int), cudaMemcpyHostToDevice);
         }
