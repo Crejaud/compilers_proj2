@@ -15,8 +15,8 @@ __global__ void edge_process(unsigned int edges_length,
                             unsigned int *weight,
                             unsigned int *distance_prev,
                             unsigned int *distance_cur,
-                            unsigned int *is_distance_infinity,
-                            int *noChange) {
+                            int *noChange,
+                            int *is_distance_infinity,) {
     unsigned int thread_id = blockDim.x * blockIdx.x + threadIdx.x;
     unsigned int thread_num = blockDim.x * gridDim.x;
 
