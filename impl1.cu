@@ -37,25 +37,17 @@ __global__ void edge_process(unsigned int edges_length,
       }
       if (distance_prev[u] + w < distance_prev[v]) {
         // relax
-        printf("%u %u\n", distance_cur[v], distance_prev[u] + w);
+        //printf("%u %u\n", distance_cur[v], distance_prev[u] + w);
         int old_distance = atomicMin(&distance_cur[v], distance_prev[u] + w);
         atomicMin(&is_distance_infinity[v], FALSE);
-        printf("%u %u %u %d\n", old_distance, distance_cur[v], distance_prev[u] + w, is_distance_infinity[v]);
+        //printf("%u %u %u %d\n", old_distance, distance_cur[v], distance_prev[u] + w, is_distance_infinity[v]);
         // test for a change!
         if (old_distance != distance_cur[v]) {
-          printf("there is change\n");
+          //printf("there is change\n");
           *noChange = FALSE;
         }
       }
     }
-}
-
-void swap_arrays(unsigned int**, unsigned int**);
-
-void swap_arrays(unsigned int **a, unsigned int **b) {
-  unsigned int *temp = *a;
-  *a = *b;
-  *b = temp;
 }
 
 void puller(std::vector<initial_vertex> * peeps, int blockSize, int blockNum){
@@ -112,7 +104,7 @@ void puller(std::vector<initial_vertex> * peeps, int blockSize, int blockNum){
         edges_src[edge_index] = peeps->at(i).nbrs[j].srcIndex;
         edges_dest[edge_index] = i;
         edges_weight[edge_index] = peeps->at(i).nbrs[j].edgeValue.weight;
-        printf("src: %u | dest: %u | weight: %u\n", edges_src[edge_index], edges_dest[edge_index], edges_weight[edge_index]);
+        //printf("src: %u | dest: %u | weight: %u\n", edges_src[edge_index], edges_dest[edge_index], edges_weight[edge_index]);
 
         edge_index++;
       }
@@ -150,8 +142,9 @@ void puller(std::vector<initial_vertex> * peeps, int blockSize, int blockNum){
 	    if (*noChange == TRUE) break;
       *noChange = TRUE;
       cudaMemcpy(cuda_noChange, noChange, sizeof(int), cudaMemcpyHostToDevice);
+
+      // get current distance and copy it to both cuda_distance_prev and cuda_distance_cur
       cudaMemcpy(distance_cur, cuda_distance_cur, vertices_length * sizeof(unsigned int), cudaMemcpyDeviceToHost);
-	    //swap_arrays(&distance_prev, &distance_cur);
       cudaMemcpy(cuda_distance_prev, distance_cur, vertices_length * sizeof(unsigned int), cudaMemcpyHostToDevice);
       cudaMemcpy(cuda_distance_cur, distance_cur, vertices_length * sizeof(unsigned int), cudaMemcpyHostToDevice);
     }
@@ -161,13 +154,10 @@ void puller(std::vector<initial_vertex> * peeps, int blockSize, int blockNum){
 
     cudaMemcpy(distance_cur, cuda_distance_cur, vertices_length * sizeof(unsigned int),
              cudaMemcpyDeviceToHost);
-    cudaMemcpy(distance_prev, cuda_distance_prev, vertices_length * sizeof(unsigned int),
-              cudaMemcpyDeviceToHost);
 
     // print it out to test
     for(int i = 0; i < vertices_length; i++) {
       printf("Vertex[%u] = %u\n", i, distance_cur[i]);
-      printf("Vertex[%u] = %u\n", i, distance_prev[i]);
     }
 
     /* Deallocate. */
@@ -176,10 +166,14 @@ void puller(std::vector<initial_vertex> * peeps, int blockSize, int blockNum){
     cudaFree(cuda_edges_weight);
     cudaFree(cuda_distance_prev);
     cudaFree(cuda_distance_cur);
+    cudaFree(cuda_noChange);
+    cudaFree(cuda_is_distance_infinity);
 
     free(edges_src);
     free(edges_dest);
     free(edges_weight);
     free(distance_prev);
     free(distance_cur);
+    free(noChange);
+    free(is_distance_infinity);
 }
