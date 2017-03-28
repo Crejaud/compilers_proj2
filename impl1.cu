@@ -33,7 +33,9 @@ __global__ void edge_process(unsigned int edges_length,
       unsigned int w = weight[i];
       if (distance_prev[u] + w < distance_prev[v]) {
         // relax
+        printf("%u %u", distance_cur[v], distance_prev[u] + w);
         int old_distance = atomicMin(&distance_cur[v], distance_prev[u] + w);
+        printf("%u %u %u", old_distance, distance_cur[v], distance_prev[u] + w);
         // test for a change!
         if (old_distance != distance_cur[v]) {
           *noChange = FALSE;
@@ -137,7 +139,13 @@ void puller(std::vector<initial_vertex> * peeps, int blockSize, int blockNum){
 	    if (*noChange == TRUE) break;
       *noChange = TRUE;
       cudaMemcpy(cuda_noChange, noChange, sizeof(int), cudaMemcpyHostToDevice);
-	    swap_arrays(&cuda_distance_prev, &cuda_distance_cur);
+      cudaMemcpy(distance_cur, cuda_distance_cur, vertices_length * sizeof(unsigned int),
+               cudaMemcpyDeviceToHost);
+      cudaMemcpy(distance_prev, cuda_distance_prev, vertices_length * sizeof(unsigned int),
+                        cudaMemcpyDeviceToHost);
+	    swap_arrays(&distance_prev, &distance_cur);
+      cudaMemcpy(cuda_distance_prev, distance_prev, vertices_length * sizeof(unsigned int), cudaMemcpyHostToDevice);
+      cudaMemcpy(cuda_distance_cur, distance_cur, vertices_length * sizeof(unsigned int), cudaMemcpyHostToDevice);
     }
 
     cudaDeviceSynchronize();
