@@ -32,10 +32,15 @@ __global__ void edge_process_out_of_core_shared_memory(unsigned int edges_length
     s_data[threadIdx.x] = -1;
     is_dest_valid[threadIdx.x] = FALSE;
 
+    __syncthreads();
+
     unsigned int i;
     for (i = 0; i < iter; i++) {
       unsigned int dataid = thread_id + i * thread_num;
       lane = dataid % 32;
+
+      if (dataid >= edges_length)
+        break;
 
       unsigned int u = src[dataid];
       unsigned int v = dest[dataid];
@@ -70,7 +75,7 @@ __global__ void edge_process_out_of_core_shared_memory(unsigned int edges_length
       __syncthreads();
 
       // i is in bounds
-      if (i + 1 < edges_length) {
+      if (dataid + 1 < edges_length) {
         // this thread is the last thread for the segment, so it holds the min
         if (dest_s_data[threadIdx.x] != dest_s_data[threadIdx.x+1] || is_dest_valid[threadIdx.x+1] == FALSE) {
           //printf("the min for dest %u is %u\n", dest[i], s_data[threadIdx.x]);
@@ -248,9 +253,6 @@ void puller(std::vector<initial_vertex> * peeps, int blockSize, int blockNum, in
       }
     }
 
-    for (int i = 0; i < 10; i++)
-      printf("first edge is src %u | dest %u | weight %u\n", edges_src[i], edges_dest[i], edges_weight[i]);
-
     cudaMalloc((void **)&cuda_edges_src, edges_length * sizeof(unsigned int));
     cudaMalloc((void **)&cuda_edges_dest, edges_length * sizeof(unsigned int));
     cudaMalloc((void **)&cuda_edges_weight, edges_length * sizeof(unsigned int));
@@ -303,7 +305,7 @@ void puller(std::vector<initial_vertex> * peeps, int blockSize, int blockNum, in
       // shared memory
       else if (smem == 1) {
         for (int i = 1; i < vertices_length; i++) {
-          //printf("pass %d\n", i);
+          printf("pass %d\n", i);
           edge_process_out_of_core_shared_memory<<<blockNum, blockSize, blockSize * sizeof(unsigned int)>>>(edges_length, cuda_edges_src,
                                               cuda_edges_dest, cuda_edges_weight,
                                               cuda_distance_prev, cuda_distance_cur,
