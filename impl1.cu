@@ -113,35 +113,40 @@ __global__ void edge_process_out_of_core(unsigned int edges_length,
     unsigned int thread_id = blockDim.x * blockIdx.x + threadIdx.x;
     unsigned int thread_num = blockDim.x * gridDim.x;
 
-    unsigned int warp_id = thread_id % 32 == 0 ? thread_id/32 : thread_id/32 + 1;
-    unsigned int warp_num = thread_num % 32 == 0 ? thread_num/32 : thread_num/32 + 1;
+    unsigned int iter = edges_length % thread_num == 0 ? edges_length / thread_num : edges_length / thread_num + 1;
+    unsigned int beg =
 
-    unsigned int load = edges_length % warp_num ? edges_length / warp_num + 1 : edges_length / warp_num;
-    unsigned int beg = load * warp_id;
-    unsigned int end = min(edges_length, beg + load);
-    if (beg == 3) {
-      printf("this has src 0!\n");
-    }
+    // unsigned int warp_id = thread_id % 32 == 0 ? thread_id/32 : thread_id/32 + 1;
+    // unsigned int warp_num = thread_num % 32 == 0 ? thread_num/32 : thread_num/32 + 1;
+    //
+    // unsigned int load = edges_length % warp_num == 0 ? edges_length / warp_num : edges_length / warp_num + 1;
+    // unsigned int beg = load * warp_id;
+    // unsigned int end = min(edges_length, beg + load);
+    // if (beg == 3) {
+    //   printf("this has src 0!\n");
+    // }
+    //
+    // if (beg == 6) {
+    //   printf("this also has src 0!\n");
+    // }
+    //unsigned int lane = threadIdx.x % 32;
+    //beg += lane;
 
-    if (beg == 6) {
-      printf("this also has src 0!\n");
-    }
-    unsigned int lane = threadIdx.x % 32;
-    beg += lane;
-
-    if (beg == 3) {
-      printf("this has src 0\n");
-    }
-
-    if (beg == 6) {
-      printf("this also has src 0\n");
-    }
+    // if (beg == 3) {
+    //   printf("this has src 0\n");
+    // }
+    //
+    // if (beg == 6) {
+    //   printf("this also has src 0\n");
+    // }
 
     unsigned int i;
-    for (i = beg; i < end; i += 32) {
-      unsigned int u = src[i];
-      unsigned int v = dest[i];
-      unsigned int w = weight[i];
+    //for (i = beg; i < end; i += 32) {
+    for (i = 0; i < iter; i++) {
+      int dataid = thread_id + i * thread_num;
+      unsigned int u = src[dataid];
+      unsigned int v = dest[dataid];
+      unsigned int w = weight[dataid];
       if (is_distance_infinity[u] == TRUE) {
         break;
       }
