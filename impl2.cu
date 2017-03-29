@@ -343,15 +343,21 @@ void neighborHandler(std::vector<initial_vertex> * peeps, int blockSize, int blo
         num_edges_to_process[j] = 0;
       }
 
+      printf("past forloop\n");
+
       cudaMemcpy(noChange, cuda_noChange, sizeof(int), cudaMemcpyDeviceToHost);
       if (*noChange == TRUE) break;
       *noChange = TRUE;
       cudaMemcpy(cuda_noChange, noChange, sizeof(int), cudaMemcpyHostToDevice);
 
+      printf("past nochange reset\n");
+
       // get current distance and copy it to both cuda_distance_prev and cuda_distance_cur
       cudaMemcpy(distance_cur, cuda_distance_cur, vertices_length * sizeof(unsigned int), cudaMemcpyDeviceToHost);
       cudaMemcpy(cuda_distance_prev, distance_cur, vertices_length * sizeof(unsigned int), cudaMemcpyHostToDevice);
       cudaMemcpy(cuda_distance_cur, distance_cur, vertices_length * sizeof(unsigned int), cudaMemcpyHostToDevice);
+
+      printf("past distance reset\n");
 
       cudaMemcpy(is_distance_infinity, cuda_is_distance_infinity_cur, vertices_length * sizeof(unsigned int), cudaMemcpyDeviceToHost);
       cudaMemcpy(cuda_is_distance_infinity_prev, is_distance_infinity, vertices_length * sizeof(unsigned int), cudaMemcpyHostToDevice);
