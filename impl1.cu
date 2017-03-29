@@ -150,13 +150,13 @@ __global__ void edge_process_out_of_core(unsigned int edges_length,
       if (is_distance_infinity[u] == TRUE) {
         break;
       }
-      printf("%u isn't infinite distance\n", u);
+      //printf("%u isn't infinite distance\n", u);
       if (distance_prev[u] + w < distance_prev[v]) {
         // relax
         //printf("%u %u\n", distance_cur[v], distance_prev[u] + w);
         int old_distance = atomicMin(&distance_cur[v], distance_prev[u] + w);
         atomicMin(&is_distance_infinity[v], FALSE);
-        printf("%u %u %u %d\n", old_distance, distance_cur[v], distance_prev[u] + w, is_distance_infinity[v]);
+        //printf("%u %u %u %d\n", old_distance, distance_cur[v], distance_prev[u] + w, is_distance_infinity[v]);
         // test for a change!
         if (old_distance != distance_cur[v]) {
           //printf("there is change\n");
