@@ -6,6 +6,9 @@
 #include "initial_graph.hpp"
 #include "parse_graph.hpp"
 
+#define TRUE 1
+#define FALSE 0
+
 /* Work efficient edge process out of core with no shared memory */
 __global__ void work_efficient_out_of_core(unsigned int edges_length,
                             unsigned int *src,
@@ -29,10 +32,10 @@ __global__ void work_efficient_out_of_core(unsigned int edges_length,
     unsigned int lane = thread_id % 32;
     beg += lane;
     for (unsigned int i = beg; i < end; i += 32) {
-      unsigned int u = src[dataid];
-      unsigned int v = dest[dataid];
-      unsigned int w = weight[dataid];
-      
+      unsigned int u = src[i];
+      unsigned int v = dest[i];
+      unsigned int w = weight[i];
+
       if (is_distance_infinity_prev[u] == TRUE) {
         continue;
       }
