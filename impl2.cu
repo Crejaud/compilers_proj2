@@ -40,7 +40,7 @@ __global__ void work_efficient_out_of_core(unsigned int edges_length,
         continue;
       }
       //printf("%u isn't infinite distance\n", u);
-      if (should_update_edge[dataid] == TRUE && distance_prev[u] + w < distance_prev[v]) {
+      if (should_update_edge[i] == TRUE && distance_prev[u] + w < distance_prev[v]) {
         // relax
         //printf("%u %u\n", distance_cur[v], distance_prev[u] + w);
         unsigned int old_distance = atomicMin(&distance_cur[v], distance_prev[u] + w);
