@@ -181,7 +181,7 @@ __global__ void edge_process_in_core(unsigned int edges_length,
         unsigned int u = src[dataid];
         unsigned int v = dest[dataid];
         unsigned int w = weight[dataid];
-        printf("src %u | dest %u | weight %u | dataid %u\n", u, v, w, dataid);
+        //printf("src %u | dest %u | weight %u | dataid %u\n", u, v, w, dataid);
         if (is_distance_infinity[u] == TRUE) {
           continue;
         }
@@ -191,7 +191,7 @@ __global__ void edge_process_in_core(unsigned int edges_length,
         }
         if (temp_dist < distance[v]) {
           // relax
-          printf("%u %u\n", distance[v], temp_dist);
+          //printf("%u %u\n", distance[v], temp_dist);
           int old_distance = atomicMin(&distance[v], temp_dist);
           atomicMin(&is_distance_infinity[v], FALSE);
           //printf("%u %u %u %d\n", old_distance, distance_cur[v], distance_prev[u] + w, is_distance_infinity[v]);
