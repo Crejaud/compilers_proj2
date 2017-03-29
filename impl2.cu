@@ -128,6 +128,7 @@ __global__ void filtering(int edges_length,
   __syncthreads();
 
   // the new length of T is the total number of edges to process!
+  printf("blockDim = %u | T becomes %u, since %u and %u | warp_id = %u\n", blockDim.x, *T_length, warp_offsets[blockDim.x-1], num_edges_to_process[blockDim.x-1], threadIdx.x);
   *T_length = warp_offsets[blockDim.x-1] + num_edges_to_process[blockDim.x-1];
 
   // parallel prefix sum is done and warp_offsets is complete
