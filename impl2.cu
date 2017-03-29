@@ -75,7 +75,7 @@ __global__ void filtering(int edges_length,
                           unsigned int *T,
                           unsigned int *T_length,
                           unsigned int *src) {
-  extern __shared__ float smem_warp_offsets[ ];
+  extern __shared__ unsigned int smem_warp_offsets[ ];
   // we can assume it will fit since there will be at most 64 warps
   unsigned int warp_id = threadIdx.x;
 
@@ -326,7 +326,7 @@ void neighborHandler(std::vector<initial_vertex> * peeps, int blockSize, int blo
   if (sync == 0) {
     for (unsigned int i = 1; i < vertices_length; i++) {
       printf("pass %u, starting filtering\n", i);
-      filtering<<<1, warp_num>>>(edges_length,
+      filtering<<<1, warp_num, warp_num * sizeof(unsigned int)>>>(edges_length,
                                 cuda_num_edges_to_process,
                                 cuda_warp_offsets,
                                 cuda_distance_prev,

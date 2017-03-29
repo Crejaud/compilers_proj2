@@ -21,7 +21,7 @@ __global__ void edge_process_out_of_core_shared_memory(unsigned int edges_length
                             int *is_distance_infinity_cur) {
     extern __shared__ unsigned int s_data[ ];
     extern __shared__ unsigned int dest_s_data[ ];
-    extern __shared__ int is_dest_valid[ ];
+    extern __shared__ unsigned int is_dest_valid[ ];
 
     // unsigned int thread_id = blockDim.x * blockIdx.x + threadIdx.x;
     // unsigned int thread_num = blockDim.x * gridDim.x;
