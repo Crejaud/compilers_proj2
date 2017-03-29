@@ -63,6 +63,8 @@ __global__ void edge_process_out_of_core_shared_memory(unsigned int edges_length
 
       __syncthreads();
 
+      printf("we made it\n");
+
       // segmented scan to find minimum
       if (lane >= 1 && dest_s_data[threadIdx.x] == dest_s_data[threadIdx.x-1] && is_dest_valid[threadIdx.x-1] == TRUE)
         s_data[threadIdx.x] = min(s_data[threadIdx.x], s_data[threadIdx.x-1]);
@@ -74,6 +76,8 @@ __global__ void edge_process_out_of_core_shared_memory(unsigned int edges_length
         s_data[threadIdx.x] = min(s_data[threadIdx.x], s_data[threadIdx.x-8]);
       if (lane >= 16 && dest_s_data[threadIdx.x] == dest_s_data[threadIdx.x-16] && is_dest_valid[threadIdx.x-16] == TRUE)
         s_data[threadIdx.x] = min(s_data[threadIdx.x], s_data[threadIdx.x-16]);
+
+      printf("past lanes\n");
 
       __syncthreads();
 
