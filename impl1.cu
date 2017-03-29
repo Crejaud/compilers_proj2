@@ -252,6 +252,8 @@ void puller(std::vector<initial_vertex> * peeps, int blockSize, int blockNum, in
     }
 
     printf("first edge is src %u | dest %u | weight %u\n", edges_src[0], edges_dest[0], edges_weight[0]);
+    printf("second edge is src %u | dest %u | weight %u\n", edges_src[1], edges_dest[1], edges_weight[1]);
+    printf("third edge is src %u | dest %u | weight %u\n", edges_src[2], edges_dest[2], edges_weight[2]);
 
     cudaMalloc((void **)&cuda_edges_src, edges_length * sizeof(unsigned int));
     cudaMalloc((void **)&cuda_edges_dest, edges_length * sizeof(unsigned int));
