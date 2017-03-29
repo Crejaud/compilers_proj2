@@ -156,6 +156,53 @@ __global__ void edge_process_out_of_core(unsigned int edges_length,
     }
 }
 
+/* Edge process out of core with no shared memory */
+__global__ void edge_process_out_of_core2(unsigned int edges_length,
+                            unsigned int *src,
+                            unsigned int *dest,
+                            unsigned int *weight,
+                            unsigned int *distance_prev,
+                            unsigned int *distance_cur,
+                            int *noChange,
+                            int *is_distance_infinity_prev,
+                            int *is_distance_infinity_cur) {
+
+    unsigned int thread_id = blockDim.x * blockIdx.x + threadIdx.x;
+    unsigned int thread_num = blockDim.x * gridDim.x;
+
+    unsigned int warp_id = thread_id / 32;
+    unsigned int warp_num = thread_num % 32 == 0 ? thread_num / 32 : thread_num / 32 + 1;
+
+    unsigned int load = edges_length % warp_num == 0 ? edges_length / warp_num : edges_length / warp_num + 1;
+    unsigned int beg = load * warp_id;
+    unsigned int end = min(edges_length, beg + load);
+    unsigned int lane = thread_id % 32;
+    beg += lane;
+    for (unsigned int i = beg; i < end; i += 32) {
+      unsigned int u = src[dataid];
+      unsigned int v = dest[dataid];
+      unsigned int w = weight[dataid];
+
+      if (is_distance_infinity_prev[u] == TRUE) {
+        continue;
+      }
+
+      //printf("%u isn't infinite distance\n", u);
+      if (distance_prev[u] + w < distance_prev[v]) {
+        // relax
+        //printf("%u %u\n", distance_cur[v], distance_prev[u] + w);
+        unsigned int old_distance = atomicMin(&distance_cur[v], distance_prev[u] + w);
+        atomicMin(&is_distance_infinity_cur[v], FALSE);
+        //printf("%u %u %u %d\n", old_distance, distance_cur[v], distance_prev[u] + w, is_distance_infinity[v]);
+        // test for a change!
+        if (old_distance != distance_cur[v]) {
+          //printf("there is change\n");
+          atomicMin(noChange, FALSE);
+        }
+      }
+    }
+}
+
 /* Edge process in core */
 __global__ void edge_process_in_core(unsigned int edges_length,
                             unsigned int vertices_length,
@@ -292,7 +339,7 @@ void puller(std::vector<initial_vertex> * peeps, int blockSize, int blockNum, in
       if (smem == 0) {
         for (unsigned int i = 1; i < vertices_length; i++) {
           //printf("pass %u\n", i);
-          edge_process_out_of_core<<<blockNum, blockSize>>>(edges_length, cuda_edges_src,
+          edge_process_out_of_core2<<<blockNum, blockSize>>>(edges_length, cuda_edges_src,
                                               cuda_edges_dest, cuda_edges_weight,
                                               cuda_distance_prev, cuda_distance_cur,
                                               cuda_noChange, cuda_is_distance_infinity_prev,

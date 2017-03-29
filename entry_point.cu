@@ -154,7 +154,7 @@ int main( int argc, char** argv )
 		    puller(&parsedGraph, bsize, bcount, sync, smem, distance);
 		    break;
 		case ProcessingType::Neighbor:
-		    neighborHandler(&parsedGraph, bsize, bcount);
+		    neighborHandler(&parsedGraph, bsize, bcount, sync, smem, distance);
 		    break;
 		default:
 		    own(&parsedGraph, bsize, bcount);
