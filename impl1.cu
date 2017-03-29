@@ -147,6 +147,8 @@ __global__ void edge_process_out_of_core(unsigned int edges_length,
     for (i = 0; i < iter; i++) {
       unsigned int dataid = thread_id + i * thread_num;
 
+      printf("dataid %u\n",dataid);
+
       if (dataid > edges_length)
         break;
 
