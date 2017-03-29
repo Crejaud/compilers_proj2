@@ -338,9 +338,9 @@ void neighborHandler(std::vector<initial_vertex> * peeps, int blockSize, int blo
       printf("filtering done\n");
 
       // reset these values back to 0
-      for(int i = 0; i < warp_num; i++) {
-        mask[i] = 0;
-        num_edges_to_process[i] = 0;
+      for(unsigned int j = 0; j < warp_num; j++) {
+        mask[j] = 0;
+        num_edges_to_process[j] = 0;
       }
 
       cudaMemcpy(noChange, cuda_noChange, sizeof(int), cudaMemcpyDeviceToHost);
