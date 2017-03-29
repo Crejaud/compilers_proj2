@@ -168,28 +168,28 @@ __global__ void edge_process_in_core(unsigned int edges_length,
     unsigned int thread_id = blockDim.x * blockIdx.x + threadIdx.x;
     unsigned int thread_num = blockDim.x * gridDim.x;
 
-    unsigned int warp_id = thread_id % 32 == 0 ? thread_id/32 : thread_id/32 + 1;
-    unsigned int warp_num = thread_num % 32 == 0 ? thread_num/32 : thread_num/32 + 1;
-
-    unsigned int load = edges_length % warp_num ? edges_length / warp_num + 1 : edges_length / warp_num;
-    unsigned int beg = load * warp_id;
-    unsigned int end = min(edges_length, beg + load);
+    unsigned int iter = edges_length % thread_num == 0 ? edges_length / thread_num : edges_length / thread_num + 1;
 
     unsigned int i;
     for (unsigned int j = 1; j < vertices_length; j++) {
       __syncthreads();
-      for (i = beg; i < end; i += 32) {
+      for (i = 0; i < iter; i++) {
+        __syncthreads();
+        unsigned int dataid = thread_id + i * thread_num;
         unsigned int u = src[i];
         unsigned int v = dest[i];
         unsigned int w = weight[i];
         if (is_distance_infinity[u] == TRUE) {
-          break;
+          continue;
         }
         unsigned int temp_dist = distance[u] + w;
+        if (temp_dist == -1) {
+          continue;
+        }
         if (temp_dist < distance[v]) {
           // relax
           //printf("%u %u\n", distance_cur[v], distance_prev[u] + w);
-          int old_distance = atomicMin(&distance[v], distance[u] + w);
+          int old_distance = atomicMin(&distance[v], temp_dist);
           atomicMin(&is_distance_infinity[v], FALSE);
           //printf("%u %u %u %d\n", old_distance, distance_cur[v], distance_prev[u] + w, is_distance_infinity[v]);
           // test for a change!
