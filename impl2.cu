@@ -61,7 +61,7 @@ __global__ void work_efficient_out_of_core(unsigned int edges_length,
     __syncthreads();
 
     // set the number of edges to process for a warps
-    atomicMax(&num_edges_to_process[warp_id], __pop(&mask[warp_id]));
+    atomicMax(&num_edges_to_process[warp_id], __popc(&mask[warp_id]));
 }
 
 /* This kernel function will perform block level parallel prefix sum to get
@@ -73,7 +73,8 @@ __global__ void filtering(int edges_length,
                           unsigned int *distance_prev,
                           unsigned int *distance_cur,
                           unsigned int *T,
-                          unsigned int *T_length) {
+                          unsigned int *T_length,
+                          unsigned int *src) {
   extern __shared__ float smem_warp_offsets[ ];
   // we can assume it will fit since there will be at most 64 warps
   unsigned int warp_id = threadIdx.x;
@@ -138,7 +139,6 @@ __global__ void filtering(int edges_length,
   unsigned int load = edges_length % blockDim.x == 0 ? edges_length / blockDim.x : edges_length / blockDim.x + 1;
   unsigned int beg = load * threadIdx.x;
   unsigned int end = min(edges_length, beg + load);
-  unsigned int lane = 0;
 
   for (unsigned int i = beg; i < end; i++) {
     // done with filling in T
@@ -300,8 +300,8 @@ void neighborHandler(std::vector<initial_vertex> * peeps, int blockSize, int blo
   cudaMalloc((void **)&cuda_T, edges_length * sizeof(unsigned int));
   cudaMalloc((void **)&cuda_T_length, sizeof(unsigned int));
   cudaMalloc((void **)&cuda_mask, warp_num * sizeof(unsigned int));
-  cudaMalloc((void **)&cuda_num_edges_to_process, warpnum * sizeof(unsigned int));
-  cudaMalloc((void **)&cuda_warp_offsets, warpnum * sizeof(unsigned int));
+  cudaMalloc((void **)&cuda_num_edges_to_process, warp_num * sizeof(unsigned int));
+  cudaMalloc((void **)&cuda_warp_offsets, warp_num * sizeof(unsigned int));
 
   cudaMemcpy(cuda_edges_src, edges_src, edges_length * sizeof(unsigned int), cudaMemcpyHostToDevice);
   cudaMemcpy(cuda_edges_dest, edges_dest, edges_length * sizeof(unsigned int), cudaMemcpyHostToDevice);
@@ -332,7 +332,8 @@ void neighborHandler(std::vector<initial_vertex> * peeps, int blockSize, int blo
                                 cuda_distance_prev,
                                 cuda_distance_cur,
                                 cuda_T,
-                                cuda_T_length);
+                                cuda_T_length,
+                                cuda_edges_src);
 
 
       // reset these values back to 0
