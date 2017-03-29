@@ -114,7 +114,7 @@ __global__ void edge_process_out_of_core(unsigned int edges_length,
     unsigned int thread_num = blockDim.x * gridDim.x;
 
     unsigned int iter = edges_length % thread_num == 0 ? edges_length / thread_num : edges_length / thread_num + 1;
-    unsigned int beg =
+    //unsigned int beg =
 
     // unsigned int warp_id = thread_id % 32 == 0 ? thread_id/32 : thread_id/32 + 1;
     // unsigned int warp_num = thread_num % 32 == 0 ? thread_num/32 : thread_num/32 + 1;
