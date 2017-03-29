@@ -23,11 +23,29 @@ __global__ void edge_process_out_of_core_shared_memory(unsigned int edges_length
     extern __shared__ unsigned int dest_s_data[ ];
     extern __shared__ int is_dest_valid[ ];
 
+    // unsigned int thread_id = blockDim.x * blockIdx.x + threadIdx.x;
+    // unsigned int thread_num = blockDim.x * gridDim.x;
+    //
+    // unsigned int iter = edges_length % thread_num == 0 ? edges_length / thread_num : edges_length / thread_num + 1;
+    // unsigned int lane = thread_id % 32;
+    //
+    // s_data[threadIdx.x] = -1;
+    // is_dest_valid[threadIdx.x] = FALSE;
+    // dest_s_data[threadIdx.x] = -1;
+    //
+    // __syncthreads();
+
     unsigned int thread_id = blockDim.x * blockIdx.x + threadIdx.x;
     unsigned int thread_num = blockDim.x * gridDim.x;
 
-    unsigned int iter = edges_length % thread_num == 0 ? edges_length / thread_num : edges_length / thread_num + 1;
+    unsigned int warp_id = thread_id / 32;
+    unsigned int warp_num = thread_num % 32 == 0 ? thread_num / 32 : thread_num / 32 + 1;
+
+    unsigned int load = edges_length % warp_num == 0 ? edges_length / warp_num : edges_length / warp_num + 1;
+    unsigned int beg = load * warp_id;
+    unsigned int end = min(edges_length, beg + load);
     unsigned int lane = thread_id % 32;
+    beg += lane;
 
     s_data[threadIdx.x] = -1;
     is_dest_valid[threadIdx.x] = FALSE;
@@ -35,17 +53,22 @@ __global__ void edge_process_out_of_core_shared_memory(unsigned int edges_length
 
     __syncthreads();
 
-    unsigned int i;
-    for (i = 0; i < iter; i++) {
-      unsigned int dataid = thread_id + i * thread_num;
-      lane = dataid % 32;
+    for (unsigned int i = beg; i < end; i += 32) {
 
-      if (dataid >= edges_length)
-        break;
+    // unsigned int i;
+    // for (i = 0; i < iter; i++) {
+    //   unsigned int dataid = thread_id + i * thread_num;
+    //   lane = dataid % 32;
+    //
+    //   if (dataid >= edges_length)
+    //     break;
 
-      unsigned int u = src[dataid];
-      unsigned int v = dest[dataid];
-      unsigned int w = weight[dataid];
+      // unsigned int u = src[dataid];
+      // unsigned int v = dest[dataid];
+      // unsigned int w = weight[dataid];
+      unsigned int u = src[i];
+      unsigned int v = dest[i];
+      unsigned int w = weight[i];
 
       //printf("src %u | dest %u | weight %u | dataid %u | lane %u\n", u, v, w, dataid, lane);
 
@@ -79,7 +102,7 @@ __global__ void edge_process_out_of_core_shared_memory(unsigned int edges_length
       __syncthreads();
 
       // i is in bounds
-      if (dataid + 1 < edges_length) {
+      if (i + 1 < edges_length) {
         //printf("inside 1\n");
         // this thread is the last thread for the segment, so it holds the min
         // this thread is the last in a block
