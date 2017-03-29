@@ -337,6 +337,15 @@ void neighborHandler(std::vector<initial_vertex> * peeps, int blockSize, int blo
 
       printf("filtering done\n");
 
+      cudaMemcpy(T, cuda_T, edges_length * sizeof(unsigned int), cudaMemcpyDeviceToHost);
+      cudaMemcpy(T_length, cuda_T_length, sizeof(unsigned int), cudaMemcpyDeviceToHost);
+
+      printf("T_length = %u\n", *T_length);
+      //print out T for testing
+      for (unsigned int j = 0; j < *T_length; j++) {
+        printf("T[%u] = %u\n", j, T[j]);
+      }
+
       // reset these values back to 0
       for(unsigned int j = 0; j < warp_num; j++) {
         mask[j] = 0;
