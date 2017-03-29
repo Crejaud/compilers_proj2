@@ -143,7 +143,11 @@ __global__ void edge_process_out_of_core(unsigned int edges_length,
     unsigned int i;
     //for (i = beg; i < end; i += 32) {
     for (i = 0; i < iter; i++) {
-      int dataid = thread_id + i * thread_num;
+      int dataid = thread_id + i * iter;
+
+      if (dataid > edges_length)
+        break;
+        
       unsigned int u = src[dataid];
       unsigned int v = dest[dataid];
       unsigned int w = weight[dataid];
