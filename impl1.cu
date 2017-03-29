@@ -291,7 +291,7 @@ void puller(std::vector<initial_vertex> * peeps, int blockSize, int blockNum, in
       // no shared memory
       if (smem == 0) {
         for (unsigned int i = 1; i < vertices_length; i++) {
-          printf("pass %u\n", i);
+          //printf("pass %u\n", i);
           edge_process_out_of_core<<<blockNum, blockSize>>>(edges_length, cuda_edges_src,
                                               cuda_edges_dest, cuda_edges_weight,
                                               cuda_distance_prev, cuda_distance_cur,
@@ -315,7 +315,7 @@ void puller(std::vector<initial_vertex> * peeps, int blockSize, int blockNum, in
       // shared memory
       else if (smem == 1) {
         for (int i = 1; i < vertices_length; i++) {
-          printf("pass %d\n", i);
+          //printf("pass %d\n", i);
           edge_process_out_of_core_shared_memory<<<blockNum, blockSize, blockSize * sizeof(unsigned int)>>>(edges_length, cuda_edges_src,
                                               cuda_edges_dest, cuda_edges_weight,
                                               cuda_distance_prev, cuda_distance_cur,
