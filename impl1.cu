@@ -17,7 +17,8 @@ __global__ void edge_process_out_of_core_shared_memory(unsigned int edges_length
                             unsigned int *distance_prev,
                             unsigned int *distance_cur,
                             int *noChange,
-                            int *is_distance_infinity) {
+                            int *is_distance_infinity_prev,
+                            int *is_distance_infinity_cur) {
     extern __shared__ unsigned int s_data[ ];
     extern __shared__ unsigned int dest_s_data[ ];
     extern __shared__ int is_dest_valid[ ];
@@ -25,28 +26,25 @@ __global__ void edge_process_out_of_core_shared_memory(unsigned int edges_length
     unsigned int thread_id = blockDim.x * blockIdx.x + threadIdx.x;
     unsigned int thread_num = blockDim.x * gridDim.x;
 
-    unsigned int warp_id = thread_id % 32 == 0 ? thread_id/32 : thread_id/32 + 1;
-    unsigned int warp_num = thread_num % 32 == 0 ? thread_num/32 : thread_num/32 + 1;
-
-    unsigned int load = edges_length % warp_num ? edges_length / warp_num + 1 : edges_length / warp_num;
-    unsigned int beg = load * warp_id;
-    unsigned int end = min(edges_length, beg + load);
+    unsigned int iter = edges_length % thread_num == 0 ? edges_length / thread_num : edges_length / thread_num + 1;
     unsigned int lane = thread_id % 32;
-    beg += lane;
 
     s_data[threadIdx.x] = -1;
     is_dest_valid[threadIdx.x] = FALSE;
 
     unsigned int i;
-    for (i = beg; i < end; i += 32) {
-      unsigned int u = src[i];
-      unsigned int v = dest[i];
-      unsigned int w = weight[i];
+    for (i = 0; i < iter; i++) {
+      unsigned int dataid = thread_id + i * thread_num;
+      lane = dataid % 32;
+
+      unsigned int u = src[dataid];
+      unsigned int v = dest[dataid];
+      unsigned int w = weight[dataid];
 
       dest_s_data[threadIdx.x] = v;
       is_dest_valid[threadIdx.x] = TRUE;
 
-      if (is_distance_infinity[u] == TRUE) {
+      if (is_distance_infinity_prev[u] == TRUE) {
         s_data[threadIdx.x] = -1;
       }
       else {
@@ -78,11 +76,11 @@ __global__ void edge_process_out_of_core_shared_memory(unsigned int edges_length
           //printf("the min for dest %u is %u\n", dest[i], s_data[threadIdx.x]);
           int old_distance = atomicMin(&distance_cur[v], s_data[threadIdx.x]);
           if (distance_cur[v] != -1)
-            atomicMin(&is_distance_infinity[v], FALSE);
+            atomicMin(&is_distance_infinity_cur[v], FALSE);
           // test for a change!
           if (old_distance != distance_cur[v]) {
             //printf("there is change\n");
-            *noChange = FALSE;
+            atomicMin(noChange, FALSE);
           }
         }
       }
@@ -91,11 +89,11 @@ __global__ void edge_process_out_of_core_shared_memory(unsigned int edges_length
         //printf("the min for dest %u is %u\n", dest[i], s_data[threadIdx.x]);
         int old_distance = atomicMin(&distance_cur[v], s_data[threadIdx.x]);
         if (distance_cur[v] != -1)
-          atomicMin(&is_distance_infinity[v], FALSE);
+          atomicMin(&is_distance_infinity_cur[v], FALSE);
         // test for a change!
         if (old_distance != distance_cur[v]) {
           //printf("there is change\n");
-          *noChange = FALSE;
+          atomicMin(noChange, FALSE);
         }
       }
     }
@@ -116,34 +114,7 @@ __global__ void edge_process_out_of_core(unsigned int edges_length,
 
     unsigned int iter = edges_length % thread_num == 0 ? edges_length / thread_num : edges_length / thread_num + 1;
 
-    //unsigned int beg =
-
-    // unsigned int warp_id = thread_id % 32 == 0 ? thread_id/32 : thread_id/32 + 1;
-    // unsigned int warp_num = thread_num % 32 == 0 ? thread_num/32 : thread_num/32 + 1;
-    //
-    // unsigned int load = edges_length % warp_num == 0 ? edges_length / warp_num : edges_length / warp_num + 1;
-    // unsigned int beg = load * warp_id;
-    // unsigned int end = min(edges_length, beg + load);
-    // if (beg == 3) {
-    //   printf("this has src 0!\n");
-    // }
-    //
-    // if (beg == 6) {
-    //   printf("this also has src 0!\n");
-    // }
-    //unsigned int lane = threadIdx.x % 32;
-    //beg += lane;
-
-    // if (beg == 3) {
-    //   printf("this has src 0\n");
-    // }
-    //
-    // if (beg == 6) {
-    //   printf("this also has src 0\n");
-    // }
-
     unsigned int i;
-    //for (i = beg; i < end; i += 32) {
     for (i = 0; i < iter; i++) {
       unsigned int dataid = thread_id + i * thread_num;
 
@@ -166,7 +137,7 @@ __global__ void edge_process_out_of_core(unsigned int edges_length,
         // test for a change!
         if (old_distance != distance_cur[v]) {
           //printf("there is change\n");
-          *noChange = FALSE;
+          atomicMin(noChange, FALSE);
         }
       }
     }
@@ -211,7 +182,7 @@ __global__ void edge_process_in_core(unsigned int edges_length,
           // test for a change!
           if (old_distance != distance[v]) {
             //printf("there is change\n");
-            *noChange = FALSE;
+            atomicMin(noChange, FALSE);
           }
         }
       }
@@ -336,7 +307,8 @@ void puller(std::vector<initial_vertex> * peeps, int blockSize, int blockNum, in
           edge_process_out_of_core_shared_memory<<<blockNum, blockSize, blockSize * sizeof(unsigned int)>>>(edges_length, cuda_edges_src,
                                               cuda_edges_dest, cuda_edges_weight,
                                               cuda_distance_prev, cuda_distance_cur,
-                                              cuda_noChange, cuda_is_distance_infinity_prev);
+                                              cuda_noChange, cuda_is_distance_infinity_prev,
+                                              cuda_is_distance_infinity_cur);
           cudaMemcpy(noChange, cuda_noChange, sizeof(int), cudaMemcpyDeviceToHost);
           if (*noChange == TRUE) break;
           *noChange = TRUE;
@@ -346,6 +318,10 @@ void puller(std::vector<initial_vertex> * peeps, int blockSize, int blockNum, in
           cudaMemcpy(distance_cur, cuda_distance_cur, vertices_length * sizeof(unsigned int), cudaMemcpyDeviceToHost);
           cudaMemcpy(cuda_distance_prev, distance_cur, vertices_length * sizeof(unsigned int), cudaMemcpyHostToDevice);
           cudaMemcpy(cuda_distance_cur, distance_cur, vertices_length * sizeof(unsigned int), cudaMemcpyHostToDevice);
+
+          cudaMemcpy(is_distance_infinity, cuda_is_distance_infinity_cur, vertices_length * sizeof(unsigned int), cudaMemcpyDeviceToHost);
+          cudaMemcpy(cuda_is_distance_infinity_prev, is_distance_infinity, vertices_length * sizeof(unsigned int), cudaMemcpyHostToDevice);
+          cudaMemcpy(cuda_is_distance_infinity_cur, is_distance_infinity, vertices_length * sizeof(unsigned int), cudaMemcpyHostToDevice);
         }
       }
       // no shared memory
