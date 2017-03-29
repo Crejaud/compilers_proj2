@@ -217,7 +217,7 @@ __global__ void edge_process_out_of_core_warp_sided(unsigned int edges_length,
         //printf("%u %u\n", distance_cur[v], distance_prev[u] + w);
         unsigned int old_distance = atomicMin(&distance_cur[v], distance_prev[u] + w);
         atomicMin(&is_distance_infinity_cur[v], FALSE);
-        printf("%u %u %u %d\n", old_distance, distance_cur[v], distance_prev[u] + w, is_distance_infinity[v]);
+        //printf("%u %u %u %d\n", old_distance, distance_cur[v], distance_prev[u] + w);
         // test for a change!
         if (old_distance != distance_cur[v]) {
           //printf("there is change\n");
@@ -361,7 +361,7 @@ void puller(std::vector<initial_vertex> * peeps, int blockSize, int blockNum, in
       // no shared memory
       if (smem == 0) {
         for (unsigned int i = 1; i < vertices_length; i++) {
-          printf("pass %u\n", i);
+          //printf("pass %u\n", i);
           edge_process_out_of_core_non_warp_partitioned<<<blockNum, blockSize>>>(edges_length, cuda_edges_src,
                                               cuda_edges_dest, cuda_edges_weight,
                                               cuda_distance_prev, cuda_distance_cur,
@@ -369,6 +369,7 @@ void puller(std::vector<initial_vertex> * peeps, int blockSize, int blockNum, in
                                               cuda_is_distance_infinity_cur);
           cudaMemcpy(noChange, cuda_noChange, sizeof(int), cudaMemcpyDeviceToHost);
           if (*noChange == TRUE) break;
+          *noChange = TRUE;
           cudaMemcpy(cuda_noChange, noChange, sizeof(int), cudaMemcpyHostToDevice);
 
           // get current distance and copy it to both cuda_distance_prev and cuda_distance_cur
