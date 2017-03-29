@@ -21,6 +21,7 @@ __global__ void work_efficient_out_of_core(unsigned int edges_length,
                             int *is_distance_infinity_cur,
                             unsigned int *mask,
                             unsigned int *num_edges_to_process,
+                            unsigned int *warp_offsets,
                             unsigned int *T,
                             unsigned int *T_length) {
     unsigned int thread_id = blockDim.x * blockIdx.x + threadIdx.x;
@@ -43,7 +44,7 @@ __global__ void work_efficient_out_of_core(unsigned int edges_length,
         continue;
       }
       //printf("%u isn't infinite distance\n", u);
-      if (should_update_edge[i] == TRUE && distance_prev[u] + w < distance_prev[v]) {
+      if (distance_prev[u] + w < distance_prev[v]) {
         // relax
         //printf("%u %u\n", distance_cur[v], distance_prev[u] + w);
         unsigned int old_distance = atomicMin(&distance_cur[v], distance_prev[u] + w);
@@ -300,6 +301,7 @@ void neighborHandler(std::vector<initial_vertex> * peeps, int blockSize, int blo
   cudaMalloc((void **)&cuda_T_length, sizeof(unsigned int));
   cudaMalloc((void **)&cuda_mask, warp_num * sizeof(unsigned int));
   cudaMalloc((void **)&cuda_num_edges_to_process, warpnum * sizeof(unsigned int));
+  cudaMalloc((void **)&cuda_warp_offsets, warpnum * sizeof(unsigned int));
 
   cudaMemcpy(cuda_edges_src, edges_src, edges_length * sizeof(unsigned int), cudaMemcpyHostToDevice);
   cudaMemcpy(cuda_edges_dest, edges_dest, edges_length * sizeof(unsigned int), cudaMemcpyHostToDevice);
@@ -313,6 +315,8 @@ void neighborHandler(std::vector<initial_vertex> * peeps, int blockSize, int blo
   cudaMemcpy(cuda_T_length, T_length, sizeof(unsigned int), cudaMemcpyHostToDevice);
   cudaMemcpy(cuda_mask, mask, warp_num * sizeof(unsigned int), cudaMemcpyHostToDevice);
   cudaMemcpy(cuda_num_edges_to_process, num_edges_to_process, warp_num * sizeof(unsigned int), cudaMemcpyHostToDevice);
+  cudaMemcpy(cuda_warp_offsets, warp_offsets, warp_num * sizeof(unsigned int), cudaMemcpyHostToDevice);
+
 
   setTime();
 
@@ -335,7 +339,6 @@ void neighborHandler(std::vector<initial_vertex> * peeps, int blockSize, int blo
       for(int i = 0; i < warp_num; i++) {
         mask[i] = 0;
         num_edges_to_process[i] = 0;
-        warp_offsets[i] = 0;
       }
 
       cudaMemcpy(noChange, cuda_noChange, sizeof(int), cudaMemcpyDeviceToHost);
@@ -359,6 +362,7 @@ void neighborHandler(std::vector<initial_vertex> * peeps, int blockSize, int blo
                                           cuda_noChange, cuda_is_distance_infinity_prev,
                                           cuda_is_distance_infinity_cur, cuda_mask,
                                           cuda_num_edges_to_process,
+                                          cuda_warp_offsets,
                                           cuda_T, cuda_T_length);
     }
   }
