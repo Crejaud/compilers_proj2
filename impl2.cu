@@ -325,7 +325,7 @@ void neighborHandler(std::vector<initial_vertex> * peeps, int blockSize, int blo
   // sync is out of core
   if (sync == 0) {
     for (unsigned int i = 1; i < vertices_length; i++) {
-      printf("pass 1, starting filtering\n");
+      printf("pass %u, starting filtering\n", i);
       filtering<<<1, warp_num>>>(edges_length,
                                 cuda_num_edges_to_process,
                                 cuda_warp_offsets,
@@ -345,25 +345,18 @@ void neighborHandler(std::vector<initial_vertex> * peeps, int blockSize, int blo
 
       printf("past forloop\n");
 
-      if (i != 1) {
-        cudaMemcpy(noChange, cuda_noChange, sizeof(int), cudaMemcpyDeviceToHost);
-        if (*noChange == TRUE) break;
-        *noChange = TRUE;
-        cudaMemcpy(cuda_noChange, noChange, sizeof(int), cudaMemcpyHostToDevice);
+      printf("past nochange reset\n");
 
-        printf("past nochange reset\n");
+      // get current distance and copy it to both cuda_distance_prev and cuda_distance_cur
+      cudaMemcpy(distance_cur, cuda_distance_cur, vertices_length * sizeof(unsigned int), cudaMemcpyDeviceToHost);
+      cudaMemcpy(cuda_distance_prev, distance_cur, vertices_length * sizeof(unsigned int), cudaMemcpyHostToDevice);
+      cudaMemcpy(cuda_distance_cur, distance_cur, vertices_length * sizeof(unsigned int), cudaMemcpyHostToDevice);
 
-        // get current distance and copy it to both cuda_distance_prev and cuda_distance_cur
-        cudaMemcpy(distance_cur, cuda_distance_cur, vertices_length * sizeof(unsigned int), cudaMemcpyDeviceToHost);
-        cudaMemcpy(cuda_distance_prev, distance_cur, vertices_length * sizeof(unsigned int), cudaMemcpyHostToDevice);
-        cudaMemcpy(cuda_distance_cur, distance_cur, vertices_length * sizeof(unsigned int), cudaMemcpyHostToDevice);
+      printf("past distance reset\n");
 
-        printf("past distance reset\n");
-
-        cudaMemcpy(is_distance_infinity, cuda_is_distance_infinity_cur, vertices_length * sizeof(unsigned int), cudaMemcpyDeviceToHost);
-        cudaMemcpy(cuda_is_distance_infinity_prev, is_distance_infinity, vertices_length * sizeof(unsigned int), cudaMemcpyHostToDevice);
-        cudaMemcpy(cuda_is_distance_infinity_cur, is_distance_infinity, vertices_length * sizeof(unsigned int), cudaMemcpyHostToDevice);
-      }
+      cudaMemcpy(is_distance_infinity, cuda_is_distance_infinity_cur, vertices_length * sizeof(unsigned int), cudaMemcpyDeviceToHost);
+      cudaMemcpy(cuda_is_distance_infinity_prev, is_distance_infinity, vertices_length * sizeof(unsigned int), cudaMemcpyHostToDevice);
+      cudaMemcpy(cuda_is_distance_infinity_cur, is_distance_infinity, vertices_length * sizeof(unsigned int), cudaMemcpyHostToDevice);
 
       printf("starting outcore\n");
 
@@ -378,6 +371,13 @@ void neighborHandler(std::vector<initial_vertex> * peeps, int blockSize, int blo
                                           cuda_T, cuda_T_length);
 
       printf("outcore done\n");
+
+      cudaMemcpy(noChange, cuda_noChange, sizeof(int), cudaMemcpyDeviceToHost);
+      if (*noChange == TRUE) break;
+      *noChange = TRUE;
+      cudaMemcpy(cuda_noChange, noChange, sizeof(int), cudaMemcpyHostToDevice);
+
+      printf("there was change\n");
     }
   }
   // sync is in core
