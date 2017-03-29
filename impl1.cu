@@ -181,7 +181,7 @@ __global__ void edge_process_in_core(unsigned int edges_length,
         unsigned int v = dest[dataid];
         unsigned int w = weight[dataid];
         //printf("src %u | dest %u | weight %u | dataid %u\n", u, v, w, dataid);
-        if (is_distance_infinity_temp[i] == TRUE) {
+        if (is_distance_infinity[u] == TRUE) {
           continue;
         }
         unsigned int temp_dist = distance[u] + w;
