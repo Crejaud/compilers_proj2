@@ -80,12 +80,12 @@ __global__ void edge_process_out_of_core_shared_memory(unsigned int edges_length
 
       // i is in bounds
       if (dataid + 1 < edges_length) {
-        printf("inside 1\n");
+        //printf("inside 1\n");
         // this thread is the last thread for the segment, so it holds the min
         // this thread is the last in a block
         if (threadIdx.x == blockDim.x - 1 || dest_s_data[threadIdx.x] != dest_s_data[threadIdx.x+1] || is_dest_valid[threadIdx.x+1] == FALSE) {
-          printf("inside 4\n");
-          printf("the min for dest %u is %u\n", dest[i], s_data[threadIdx.x]);
+          //printf("inside 4\n");
+          printf("the min for dest %u is %u\n", dest[dataid], s_data[threadIdx.x]);
           int old_distance = atomicMin(&distance_cur[v], s_data[threadIdx.x]);
           if (distance_cur[v] != -1)
             atomicMin(&is_distance_infinity_cur[v], FALSE);
@@ -95,11 +95,10 @@ __global__ void edge_process_out_of_core_shared_memory(unsigned int edges_length
             atomicMin(noChange, FALSE);
           }
         }
-        printf("inside no crashes\n");
+        //printf("inside no crashes\n");
       }
       // i is the last element
       else {
-        printf("inside 2\n");
         //printf("the min for dest %u is %u\n", dest[i], s_data[threadIdx.x]);
         int old_distance = atomicMin(&distance_cur[v], s_data[threadIdx.x]);
         if (distance_cur[v] != -1)
