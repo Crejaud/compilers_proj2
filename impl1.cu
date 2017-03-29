@@ -188,7 +188,7 @@ __global__ void edge_process_in_core(unsigned int edges_length,
         }
         if (temp_dist < distance[v]) {
           // relax
-          printf("%u %u\n", distance_cur[v], distance_prev[u] + w);
+          printf("%u %u\n", distance[v], temp_dist);
           int old_distance = atomicMin(&distance[v], temp_dist);
           atomicMin(&is_distance_infinity[v], FALSE);
           //printf("%u %u %u %d\n", old_distance, distance_cur[v], distance_prev[u] + w, is_distance_infinity[v]);
