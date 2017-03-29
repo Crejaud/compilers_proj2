@@ -119,7 +119,14 @@ __global__ void edge_process_out_of_core(unsigned int edges_length,
     unsigned int load = edges_length % warp_num ? edges_length / warp_num + 1 : edges_length / warp_num;
     unsigned int beg = load * warp_id;
     unsigned int end = min(edges_length, beg + load);
-    unsigned int lane = thread_id % 32;
+    if (beg == 3) {
+      printf("this has src 0!\n");
+    }
+
+    if (beg == 6) {
+      printf("this also has src 0!\n");
+    }
+    unsigned int lane = threadIdx.x % 32;
     beg += lane;
 
     if (beg == 3) {
