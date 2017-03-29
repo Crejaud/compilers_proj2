@@ -369,10 +369,17 @@ void neighborHandler(std::vector<initial_vertex> * peeps, int blockSize, int blo
   }
   // sync is in core
   else if (sync == 1) {
-    work_efficient_in_core<<<blockNum, blockSize>>>(edges_length, vertices_length,
-                                        cuda_edges_src, cuda_edges_dest,
-                                        cuda_edges_weight, cuda_distance_cur,
-                                        cuda_noChange, cuda_is_distance_infinity_prev);
+    for (unsigned int i = 1; i < vertices_length; i++) {
+      work_efficient_in_core<<<blockNum, blockSize>>>(edges_length, vertices_length,
+                                          cuda_edges_src, cuda_edges_dest,
+                                          cuda_edges_weight, cuda_distance_cur,
+                                          cuda_noChange, cuda_is_distance_infinity_prev);
+
+      cudaMemcpy(noChange, cuda_noChange, sizeof(int), cudaMemcpyDeviceToHost);
+      if (*noChange == TRUE) break;
+      *noChange = TRUE;
+      cudaMemcpy(cuda_noChange, noChange, sizeof(int), cudaMemcpyHostToDevice);
+    }
   }
 
   else {
