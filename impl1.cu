@@ -336,7 +336,7 @@ void puller(std::vector<initial_vertex> * peeps, int blockSize, int blockNum, in
           edge_process_out_of_core_shared_memory<<<blockNum, blockSize, blockSize * sizeof(unsigned int)>>>(edges_length, cuda_edges_src,
                                               cuda_edges_dest, cuda_edges_weight,
                                               cuda_distance_prev, cuda_distance_cur,
-                                              cuda_noChange, cuda_is_distance_infinity);
+                                              cuda_noChange, cuda_is_distance_infinity_prev);
           cudaMemcpy(noChange, cuda_noChange, sizeof(int), cudaMemcpyDeviceToHost);
           if (*noChange == TRUE) break;
           *noChange = TRUE;
@@ -360,7 +360,7 @@ void puller(std::vector<initial_vertex> * peeps, int blockSize, int blockNum, in
       edge_process_in_core<<<blockNum, blockSize>>>(edges_length, vertices_length,
                                           cuda_edges_src, cuda_edges_dest,
                                           cuda_edges_weight, cuda_distance_cur,
-                                          cuda_noChange, cuda_is_distance_infinity);
+                                          cuda_noChange, cuda_is_distance_infinity_prev);
     }
 
     else {
