@@ -149,7 +149,7 @@ __global__ void edge_process_out_of_core(unsigned int edges_length,
 
       printf("dataid %u\n",dataid);
 
-      if (dataid > edges_length)
+      if (dataid >= edges_length)
         break;
 
       unsigned int u = src[dataid];
