@@ -170,12 +170,7 @@ __global__ void edge_process_in_core(unsigned int edges_length,
 
     unsigned int iter = edges_length % thread_num == 0 ? edges_length / thread_num : edges_length / thread_num + 1;
 
-    int is_distance_infinity_temp[iter];
-
     for (unsigned int j = 1; j < vertices_length; j++) {
-      for (unsigned int i = 0; i < iter; i++) {
-        is_distance_infinity_temp[i] = is_distance_infinity[src[thread_id + i * thread_num]];
-      }
       __syncthreads();
       for (unsigned int i = 0; i < iter; i++) {
         __syncthreads();
