@@ -382,7 +382,8 @@ void puller(std::vector<initial_vertex> * peeps, int blockSize, int blockNum, in
     cudaFree(cuda_distance_prev);
     cudaFree(cuda_distance_cur);
     cudaFree(cuda_noChange);
-    cudaFree(cuda_is_distance_infinity);
+    cudaFree(cuda_is_distance_infinity_prev);
+    cudaFree(cuda_is_distance_infinity_cur);
 
     free(edges_src);
     free(edges_dest);
