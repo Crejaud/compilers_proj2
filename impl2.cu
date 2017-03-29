@@ -287,7 +287,7 @@ void neighborHandler(std::vector<initial_vertex> * peeps, int blockSize, int blo
       if (edges_src[edge_index] == 0) {
         unsigned int load = edges_length % warp_num == 0 ? edges_length / warp_num : edges_length / warp_num + 1;
         unsigned int warp_id = edge_index / load;
-        num_edges_to_process[warp_id];
+        num_edges_to_process[warp_id]++;;
       }
       //printf("src: %u | dest: %u | weight: %u\n", edges_src[edge_index], edges_dest[edge_index], edges_weight[edge_index]);
 
