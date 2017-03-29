@@ -361,8 +361,8 @@ void puller(std::vector<initial_vertex> * peeps, int blockSize, int blockNum, in
       // no shared memory
       if (smem == 0) {
         for (unsigned int i = 1; i < vertices_length; i++) {
-          //printf("pass %u\n", i);
-          edge_process_out_of_core_warp_sided<<<blockNum, blockSize>>>(edges_length, cuda_edges_src,
+          printf("pass %u\n", i);
+          edge_process_out_of_core_non_warp_partitioned<<<blockNum, blockSize>>>(edges_length, cuda_edges_src,
                                               cuda_edges_dest, cuda_edges_weight,
                                               cuda_distance_prev, cuda_distance_cur,
                                               cuda_noChange, cuda_is_distance_infinity_prev,
