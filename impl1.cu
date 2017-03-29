@@ -115,7 +115,6 @@ __global__ void edge_process_out_of_core(unsigned int edges_length,
 
     unsigned int iter = edges_length % thread_num == 0 ? edges_length / thread_num : edges_length / thread_num + 1;
 
-    printf("thread_id %u | thread_num %u | edges_length %u | iter %u\n", thread_id, thread_num, edges_length, iter);
     //unsigned int beg =
 
     // unsigned int warp_id = thread_id % 32 == 0 ? thread_id/32 : thread_id/32 + 1;
@@ -146,8 +145,6 @@ __global__ void edge_process_out_of_core(unsigned int edges_length,
     //for (i = beg; i < end; i += 32) {
     for (i = 0; i < iter; i++) {
       unsigned int dataid = thread_id + i * thread_num;
-
-      printf("dataid %u\n",dataid);
 
       if (dataid >= edges_length)
         break;
