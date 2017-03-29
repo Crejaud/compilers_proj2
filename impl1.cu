@@ -156,7 +156,7 @@ __global__ void edge_process_out_of_core(unsigned int edges_length,
       unsigned int v = dest[dataid];
       unsigned int w = weight[dataid];
       if (is_distance_infinity[u] == TRUE) {
-        break;
+        continue;
       }
       //printf("%u isn't infinite distance\n", u);
       if (distance_prev[u] + w < distance_prev[v]) {
