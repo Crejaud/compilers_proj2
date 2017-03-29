@@ -109,7 +109,8 @@ __global__ void edge_process_out_of_core(unsigned int edges_length,
                             unsigned int *distance_prev,
                             unsigned int *distance_cur,
                             int *noChange,
-                            int *is_distance_infinity) {
+                            int *is_distance_infinity_prev,
+                            int *is_distance_infinity_cur) {
     unsigned int thread_id = blockDim.x * blockIdx.x + threadIdx.x;
     unsigned int thread_num = blockDim.x * gridDim.x;
 
@@ -152,7 +153,7 @@ __global__ void edge_process_out_of_core(unsigned int edges_length,
       unsigned int u = src[dataid];
       unsigned int v = dest[dataid];
       unsigned int w = weight[dataid];
-      if (is_distance_infinity[u] == TRUE) {
+      if (is_distance_infinity_prev[u] == TRUE) {
         continue;
       }
       //printf("%u isn't infinite distance\n", u);
@@ -160,7 +161,7 @@ __global__ void edge_process_out_of_core(unsigned int edges_length,
         // relax
         //printf("%u %u\n", distance_cur[v], distance_prev[u] + w);
         unsigned int old_distance = atomicMin(&distance_cur[v], distance_prev[u] + w);
-        atomicMin(&is_distance_infinity[v], FALSE);
+        atomicMin(&is_distance_infinity_cur[v], FALSE);
         //printf("%u %u %u %d\n", old_distance, distance_cur[v], distance_prev[u] + w, is_distance_infinity[v]);
         // test for a change!
         if (old_distance != distance_cur[v]) {
@@ -238,7 +239,7 @@ void puller(std::vector<initial_vertex> * peeps, int blockSize, int blockNum, in
 
     unsigned int *cuda_edges_src, *cuda_edges_dest, *cuda_edges_weight;
     unsigned int *cuda_distance_prev, *cuda_distance_cur;
-    int *cuda_noChange, *cuda_is_distance_infinity;
+    int *cuda_noChange, *cuda_is_distance_infinity_prev, *cuda_is_distance_infinity_cur;
 
     // the distance to the first vertex is always 0
     distance_prev[0] = 0;
@@ -285,7 +286,8 @@ void puller(std::vector<initial_vertex> * peeps, int blockSize, int blockNum, in
     cudaMalloc((void **)&cuda_distance_prev, vertices_length * sizeof(unsigned int));
     cudaMalloc((void **)&cuda_distance_cur, vertices_length * sizeof(unsigned int));
     cudaMalloc((void **)&cuda_noChange, sizeof(int));
-    cudaMalloc((void **)&cuda_is_distance_infinity, vertices_length * sizeof(int));
+    cudaMalloc((void **)&cuda_is_distance_infinity_prev, vertices_length * sizeof(int));
+    cudaMalloc((void **)&cuda_is_distance_infinity_cur, vertices_length * sizeof(int));
 
     cudaMemcpy(cuda_edges_src, edges_src, edges_length * sizeof(unsigned int), cudaMemcpyHostToDevice);
     cudaMemcpy(cuda_edges_dest, edges_dest, edges_length * sizeof(unsigned int), cudaMemcpyHostToDevice);
@@ -293,7 +295,8 @@ void puller(std::vector<initial_vertex> * peeps, int blockSize, int blockNum, in
     cudaMemcpy(cuda_distance_prev, distance_prev, vertices_length * sizeof(unsigned int), cudaMemcpyHostToDevice);
     cudaMemcpy(cuda_distance_cur, distance_cur, vertices_length * sizeof(unsigned int), cudaMemcpyHostToDevice);
     cudaMemcpy(cuda_noChange, noChange, sizeof(int), cudaMemcpyHostToDevice);
-    cudaMemcpy(cuda_is_distance_infinity, is_distance_infinity, vertices_length * sizeof(int), cudaMemcpyHostToDevice);
+    cudaMemcpy(cuda_is_distance_infinity_prev, is_distance_infinity, vertices_length * sizeof(int), cudaMemcpyHostToDevice);
+    cudaMemcpy(cuda_is_distance_infinity_cur, is_distance_infinity, vertices_length * sizeof(int), cudaMemcpyHostToDevice);
 
     setTime();
 
@@ -309,7 +312,8 @@ void puller(std::vector<initial_vertex> * peeps, int blockSize, int blockNum, in
           edge_process_out_of_core<<<blockNum, blockSize>>>(edges_length, cuda_edges_src,
                                               cuda_edges_dest, cuda_edges_weight,
                                               cuda_distance_prev, cuda_distance_cur,
-                                              cuda_noChange, cuda_is_distance_infinity);
+                                              cuda_noChange, cuda_is_distance_infinity_prev,
+                                              cuda_is_distance_infinity_cur);
           cudaMemcpy(noChange, cuda_noChange, sizeof(int), cudaMemcpyDeviceToHost);
           if (*noChange == TRUE) break;
           *noChange = TRUE;
@@ -319,6 +323,10 @@ void puller(std::vector<initial_vertex> * peeps, int blockSize, int blockNum, in
           cudaMemcpy(distance_cur, cuda_distance_cur, vertices_length * sizeof(unsigned int), cudaMemcpyDeviceToHost);
           cudaMemcpy(cuda_distance_prev, distance_cur, vertices_length * sizeof(unsigned int), cudaMemcpyHostToDevice);
           cudaMemcpy(cuda_distance_cur, distance_cur, vertices_length * sizeof(unsigned int), cudaMemcpyHostToDevice);
+
+          cudaMemcpy(is_distance_infinity, cuda_is_distance_infinity_cur, vertices_length * sizeof(unsigned int), cudaMemcpyDeviceToHost);
+          cudaMemcpy(cuda_is_distance_infinity_prev, is_distance_infinity, vertices_length * sizeof(unsigned int), cudaMemcpyHostToDevice);
+          cudaMemcpy(cuda_is_distance_infinity_cur, is_distance_infinity, vertices_length * sizeof(unsigned int), cudaMemcpyHostToDevice);
         }
       }
       // shared memory
