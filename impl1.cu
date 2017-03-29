@@ -127,7 +127,6 @@ __global__ void edge_process_out_of_core(unsigned int edges_length,
       unsigned int u = src[i];
       unsigned int v = dest[i];
       unsigned int w = weight[i];
-      printf("inside\n");
       if (is_distance_infinity[u] == TRUE) {
         break;
       }
@@ -251,6 +250,8 @@ void puller(std::vector<initial_vertex> * peeps, int blockSize, int blockNum, in
         edge_index++;
       }
     }
+
+    printf("first edge is src %u | dest %u | weight %u\n", edges_src[0], edges_dest[0], edges_weight[0]);
 
     cudaMalloc((void **)&cuda_edges_src, edges_length * sizeof(unsigned int));
     cudaMalloc((void **)&cuda_edges_dest, edges_length * sizeof(unsigned int));
