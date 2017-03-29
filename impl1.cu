@@ -176,6 +176,8 @@ __global__ void edge_process_in_core(unsigned int edges_length,
       for (i = 0; i < iter; i++) {
         __syncthreads();
         unsigned int dataid = thread_id + i * thread_num;
+        if (dataid >= edges_length)
+          continue;
         unsigned int u = src[dataid];
         unsigned int v = dest[dataid];
         unsigned int w = weight[dataid];
