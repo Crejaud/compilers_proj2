@@ -122,6 +122,14 @@ __global__ void edge_process_out_of_core(unsigned int edges_length,
     unsigned int lane = thread_id % 32;
     beg += lane;
 
+    if (beg == 3) {
+      printf("this has src 0\n");
+    }
+
+    if (beg == 6) {
+      printf("this also has src 0\n");
+    }
+
     unsigned int i;
     for (i = beg; i < end; i += 32) {
       unsigned int u = src[i];
