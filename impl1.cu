@@ -46,6 +46,8 @@ __global__ void edge_process_out_of_core_shared_memory(unsigned int edges_length
       unsigned int v = dest[dataid];
       unsigned int w = weight[dataid];
 
+      printf("src %u | dest %u | weight %u | dataid %u | lane %u\n", u, v, w, dataid, lane);
+
       dest_s_data[threadIdx.x] = v;
       is_dest_valid[threadIdx.x] = TRUE;
 
