@@ -143,11 +143,11 @@ __global__ void edge_process_out_of_core(unsigned int edges_length,
     unsigned int i;
     //for (i = beg; i < end; i += 32) {
     for (i = 0; i < iter; i++) {
-      int dataid = thread_id + i * iter;
+      unsigned int dataid = thread_id + i * thread_num;
 
       if (dataid > edges_length)
         break;
-        
+
       unsigned int u = src[dataid];
       unsigned int v = dest[dataid];
       unsigned int w = weight[dataid];
@@ -158,7 +158,7 @@ __global__ void edge_process_out_of_core(unsigned int edges_length,
       if (distance_prev[u] + w < distance_prev[v]) {
         // relax
         //printf("%u %u\n", distance_cur[v], distance_prev[u] + w);
-        int old_distance = atomicMin(&distance_cur[v], distance_prev[u] + w);
+        unsigned int old_distance = atomicMin(&distance_cur[v], distance_prev[u] + w);
         atomicMin(&is_distance_infinity[v], FALSE);
         //printf("%u %u %u %d\n", old_distance, distance_cur[v], distance_prev[u] + w, is_distance_infinity[v]);
         // test for a change!
