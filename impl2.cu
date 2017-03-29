@@ -127,6 +127,12 @@ __global__ void filtering(int edges_length,
 
   __syncthreads();
 
+  if (threadIdx.x == 0) {
+    for(int j = 0; j < blockDim.x; j++) {
+      printf("num_edges_to_process[%u] = %u | warp_offsets[%u] = %u\n", j, num_edges_to_process[j], j, warp_offsets[j]);
+    }
+  }
+
   // the new length of T is the total number of edges to process!
   printf("blockDim = %u | T becomes %u, since %u and %u | warp_id = %u\n", blockDim.x, *T_length, warp_offsets[blockDim.x-1], num_edges_to_process[blockDim.x-1], threadIdx.x);
   *T_length = warp_offsets[blockDim.x-1] + num_edges_to_process[blockDim.x-1];
