@@ -135,7 +135,7 @@ __global__ void filtering(int edges_length,
 
   // the new length of T is the total number of edges to process!
   *T_length = warp_offsets[blockDim.x-1] + num_edges_to_process[blockDim.x-1];
-  printf("blockDim = %u | T becomes %u, since %u and %u | warp_id = %u\n", blockDim.x, *T_length, warp_offsets[blockDim.x-1], num_edges_to_process[blockDim.x-1], threadIdx.x);
+  //printf("blockDim = %u | T becomes %u, since %u and %u | warp_id = %u\n", blockDim.x, *T_length, warp_offsets[blockDim.x-1], num_edges_to_process[blockDim.x-1], threadIdx.x);
 
   // parallel prefix sum is done and warp_offsets is complete
 
@@ -366,6 +366,9 @@ void neighborHandler(std::vector<initial_vertex> * peeps, int blockSize, int blo
 
       // get current distance and copy it to both cuda_distance_prev and cuda_distance_cur
       cudaMemcpy(distance_cur, cuda_distance_cur, vertices_length * sizeof(unsigned int), cudaMemcpyDeviceToHost);
+      for (unsigned int j = 0; j < vertices_length; j++) {
+        printf("distance_cur[%u] = %u\n", j, distance_cur[j]);
+      }
       cudaMemcpy(cuda_distance_prev, distance_cur, vertices_length * sizeof(unsigned int), cudaMemcpyHostToDevice);
       cudaMemcpy(cuda_distance_cur, distance_cur, vertices_length * sizeof(unsigned int), cudaMemcpyHostToDevice);
 
