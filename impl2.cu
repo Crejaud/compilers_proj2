@@ -81,18 +81,18 @@ __global__ void work_efficient_out_of_core(unsigned int edges_length,
           atomicMin(noChange, FALSE);
         }
       }
-      atomicOr(&mask[warp_id], __ballot(distance_cur[u] != distance_prev[u]));
-      if (mask[warp_id] != 0)
-      printf("mask[%u] = %u\n", warp_id, mask[warp_id]);
+      // atomicOr(&mask[warp_id], __ballot(distance_cur[u] != distance_prev[u]));
+      // if (mask[warp_id] != 0)
+      // printf("mask[%u] = %u\n", warp_id, mask[warp_id]);
     }
-    __syncthreads();
+    //__syncthreads();
 
     // set the number of edges to process for a warps
-    if (__popc(mask[warp_id]) != 0)
-    printf("__popc(mask[%u]) = %u\n", warp_id, __popc(mask[warp_id]));
-    atomicMax(&num_edges_to_process[warp_id], __popc(mask[warp_id]));
-    if (num_edges_to_process[warp_id] != 0)
-    printf("num_edges_to_process[%u] = %u\n", warp_id, num_edges_to_process[warp_id]);
+    // if (__popc(mask[warp_id]) != 0)
+    // printf("__popc(mask[%u]) = %u\n", warp_id, __popc(mask[warp_id]));
+    // atomicMax(&num_edges_to_process[warp_id], __popc(mask[warp_id]));
+    // if (num_edges_to_process[warp_id] != 0)
+    // printf("num_edges_to_process[%u] = %u\n", warp_id, num_edges_to_process[warp_id]);
 }
 
 /* This kernel function will perform block level parallel prefix sum to get
