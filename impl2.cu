@@ -373,6 +373,7 @@ void neighborHandler(std::vector<initial_vertex> * peeps, int blockSize, int blo
       //printf("past forloop\n");
 
       //printf("past nochange reset\n");
+      setTime();
 
       // get current distance and copy it to both cuda_distance_prev and cuda_distance_cur
       cudaMemcpy(distance_cur, cuda_distance_cur, vertices_length * sizeof(unsigned int), cudaMemcpyDeviceToHost);
@@ -390,7 +391,6 @@ void neighborHandler(std::vector<initial_vertex> * peeps, int blockSize, int blo
 
       //printf("starting outcore\n");
 
-      setTime();
       //printf("pass %u\n", i);
       work_efficient_out_of_core<<<blockNum, blockSize>>>(edges_length, cuda_edges_src,
                                           cuda_edges_dest, cuda_edges_weight,
