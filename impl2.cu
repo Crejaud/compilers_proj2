@@ -58,10 +58,10 @@ __global__ void work_efficient_out_of_core(unsigned int edges_length,
     unsigned int beg = warp_offsets[warp_id];
     unsigned int end = beg + num_edges_to_process[warp_id];
     unsigned int lane = thread_id % 32;
-    printf("warp_id %u | beg %u | end %u | lane %u\n", warp_id, beg, end, lane);
     beg += lane;
 
     for (unsigned int i = beg; i < end; i += 32) {
+      printf("warp_id %u | beg %u | end %u | lane %u\n", warp_id, beg, end);
       unsigned int u = src[T[i]];
       unsigned int v = dest[T[i]];
       unsigned int w = weight[T[i]];
