@@ -456,7 +456,7 @@ void neighborHandler(std::vector<initial_vertex> * peeps, int blockSize, int blo
 
   cudaDeviceSynchronize();
   std::cout << "The total computation kernel time on GPU is " << computingTime << " milli-seconds\n";
-  std::cout << "The total filtering kernel time on GPU is " << computingTime << " milli-seconds\n";
+  std::cout << "The total filtering kernel time on GPU is " << filteringTime << " milli-seconds\n";
 
   cudaMemcpy(distance_cur, cuda_distance_cur, vertices_length * sizeof(unsigned int),
            cudaMemcpyDeviceToHost);
