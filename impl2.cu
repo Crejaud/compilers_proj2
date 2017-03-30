@@ -57,16 +57,16 @@ __global__ void work_efficient_out_of_core(unsigned int edges_length,
         }
       }
       atomicOr(&mask[warp_id], __ballot(distance_cur[u] != distance_prev[u]));
-      if (warp_id < 6)
+      if (mask[warp_id] != 0)
       printf("mask[%u] = %u\n", warp_id, mask[warp_id]);
     }
     __syncthreads();
 
     // set the number of edges to process for a warps
-    if (warp_id < 6)
+    if (__popc(mask[warp_id]) != 0)
     printf("__popc(mask[%u]) = %u\n", warp_id, __popc(mask[warp_id]));
     atomicMax(&num_edges_to_process[warp_id], __popc(mask[warp_id]));
-    if (warp_id < 6)
+    if (num_edges_to_process[warp_id] != 0)
     printf("num_edges_to_process[%u] = %u\n", warp_id, num_edges_to_process[warp_id]);
 }
 
