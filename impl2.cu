@@ -436,7 +436,7 @@ void neighborHandler(std::vector<initial_vertex> * peeps, int blockSize, int blo
 
       printf("there was change\n");
 
-      find_num_edges_to_process(edges_length,
+      find_num_edges_to_process<<<blockNum, blockSize>>>(edges_length,
                                   cuda_edges_src,
                                   cuda_distance_prev,
                                   cuda_distance_cur,
