@@ -414,6 +414,13 @@ void neighborHandler(std::vector<initial_vertex> * peeps, int blockSize, int blo
       //printf("filtering done\n");
       filteringTime += getTime();
 
+      cudaMemcpy(distance_cur, cuda_distance_cur, vertices_length * sizeof(unsigned int), cudaMemcpyDeviceToHost);
+      // for (unsigned int j = 0; j < vertices_length; j++) {
+      //   printf("distance_cur[%u] = %u\n", j, distance_cur[j]);
+      // }
+      cudaMemcpy(cuda_distance_prev, distance_cur, vertices_length * sizeof(unsigned int), cudaMemcpyHostToDevice);
+      cudaMemcpy(cuda_distance_cur, distance_cur, vertices_length * sizeof(unsigned int), cudaMemcpyHostToDevice);
+
       setTime();
       work_efficient_in_core<<<blockNum, blockSize>>>(edges_length, vertices_length,
                                           cuda_edges_src, cuda_edges_dest,
