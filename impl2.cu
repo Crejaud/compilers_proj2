@@ -24,6 +24,8 @@ __global__ void find_num_edges_to_process(unsigned int edges_length,
   unsigned int load = edges_length % warp_num == 0 ? edges_length / warp_num : edges_length / warp_num + 1;
   unsigned int beg = load * warp_id;
   unsigned int end = min(edges_length, beg + load);
+  unsigned int lane = thread_id % 32;
+  beg += lane;
 
   for (unsigned int i = beg; i < end; i += 32) {
     if (distance_cur[src[i]] != distance_prev[src[i]]) {
@@ -107,23 +109,6 @@ __global__ void filtering(int edges_length,
   extern __shared__ unsigned int smem_warp_offsets[ ];
   // we can assume it will fit since there will be at most 64 warps
   unsigned int warp_id = threadIdx.x;
-
-  unsigned int load = edges_length % blockDim.x == 0 ? edges_length / blockDim.x : edges_length / blockDim.x + 1;
-  unsigned int beg = load * threadIdx.x;
-  unsigned int end = min(edges_length, beg + load);
-
-  for (unsigned int i = beg; i < end; i++) {
-    // done with filling in T
-    if (cur_offset >= warp_offsets[threadIdx.x] + num_edges_to_process[threadIdx.x])
-      return;
-
-    // if they're not the same
-    if (distance_cur[src[i]] != distance_prev[src[i]]) {
-      printf("found src: %u, put into T[%u] |  range is [%u, %u]\n", src[i], cur_offset, warp_offsets[threadIdx.x], warp_offsets[threadIdx.x] + num_edges_to_process[threadIdx.x] - 1);
-      T[cur_offset] = i;
-      cur_offset++;
-    }
-  }
 
   __syncthreads();
 
