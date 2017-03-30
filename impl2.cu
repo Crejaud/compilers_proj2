@@ -164,12 +164,12 @@ __global__ void filtering(int edges_length,
     if (cur_offset >= warp_offsets[threadIdx.x] + num_edges_to_process[threadIdx.x])
       return;
 
-    // if they're not the same
-    // if (distance_cur[src[i]] != distance_prev[src[i]]) {
-    //   printf("found src: %u, put into T[%u] |  range is [%u, %u]\n", src[i], cur_offset, warp_offsets[threadIdx.x], warp_offsets[threadIdx.x] + num_edges_to_process[threadIdx.x] - 1);
-    //   T[cur_offset] = i;
-    //   cur_offset++;
-    // }
+    //if they're not the same
+    if (distance_cur[src[i]] != distance_prev[src[i]]) {
+      printf("found src: %u, put into T[%u] |  range is [%u, %u]\n", src[i], cur_offset, warp_offsets[threadIdx.x], warp_offsets[threadIdx.x] + num_edges_to_process[threadIdx.x] - 1);
+      T[cur_offset] = i;
+      cur_offset++;
+    }
   }
 }
 
