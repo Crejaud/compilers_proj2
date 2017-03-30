@@ -242,6 +242,9 @@ void neighborHandler(std::vector<initial_vertex> * peeps, int blockSize, int blo
   unsigned int *T, *T_length;
   unsigned int *warp_offsets;
 
+  // timers
+  double filteringTime = 0, computingTime = 0;
+
   // this is the total number of warps
   unsigned int warp_num = blockSize * blockNum % 32 == 0 ? blockSize * blockNum / 32 : blockSize * blockNum / 32 + 1;
 
@@ -339,15 +342,14 @@ void neighborHandler(std::vector<initial_vertex> * peeps, int blockSize, int blo
   cudaMemcpy(cuda_warp_offsets, warp_offsets, warp_num * sizeof(unsigned int), cudaMemcpyHostToDevice);
 
 
-  setTime();
-
   /*
    * Do all the things here!
    **/
   // sync is out of core
   if (sync == 0) {
     for (unsigned int i = 1; i < vertices_length; i++) {
-      printf("pass %u, starting filtering\n", i);
+      //printf("pass %u, starting filtering\n", i);
+      setTime();
       filtering<<<1, warp_num, warp_num * sizeof(unsigned int)>>>(edges_length,
                                 cuda_num_edges_to_process,
                                 cuda_warp_offsets,
@@ -358,6 +360,9 @@ void neighborHandler(std::vector<initial_vertex> * peeps, int blockSize, int blo
                                 cuda_edges_src);
 
       //printf("filtering done\n");
+      filteringTime += getTime();
+
+      setTime();
 
       cudaMemcpy(T, cuda_T, edges_length * sizeof(unsigned int), cudaMemcpyDeviceToHost);
       cudaMemcpy(T_length, cuda_T_length, sizeof(unsigned int), cudaMemcpyDeviceToHost);
@@ -397,6 +402,7 @@ void neighborHandler(std::vector<initial_vertex> * peeps, int blockSize, int blo
                                           cuda_warp_offsets,
                                           cuda_T, cuda_T_length);
 
+      computingTime += getTime();
       //printf("outcore done\n");
 
       cudaMemcpy(noChange, cuda_noChange, sizeof(int), cudaMemcpyDeviceToHost);
@@ -428,11 +434,13 @@ void neighborHandler(std::vector<initial_vertex> * peeps, int blockSize, int blo
   // sync is in core
   else if (sync == 1) {
     for (unsigned int i = 1; i < vertices_length; i++) {
+      setTime();
       work_efficient_in_core<<<blockNum, blockSize>>>(edges_length, vertices_length,
                                           cuda_edges_src, cuda_edges_dest,
                                           cuda_edges_weight, cuda_distance_cur,
                                           cuda_noChange, cuda_is_distance_infinity_prev);
 
+      computingTime += getTime();
       cudaMemcpy(noChange, cuda_noChange, sizeof(int), cudaMemcpyDeviceToHost);
       if (*noChange == TRUE) break;
       *noChange = TRUE;
@@ -447,7 +455,8 @@ void neighborHandler(std::vector<initial_vertex> * peeps, int blockSize, int blo
   }
 
   cudaDeviceSynchronize();
-  std::cout << "Took " << getTime() << "ms.\n";
+  std::cout << "The total computation kernel time on GPU is " << computingTime << " milli-seconds\n";
+  std::cout << "The total filtering kernel time on GPU is " << computingTime << " milli-seconds\n";
 
   cudaMemcpy(distance_cur, cuda_distance_cur, vertices_length * sizeof(unsigned int),
            cudaMemcpyDeviceToHost);
