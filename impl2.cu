@@ -53,46 +53,27 @@ __global__ void work_efficient_out_of_core(unsigned int edges_length,
     unsigned int thread_num = blockDim.x * gridDim.x;
 
     unsigned int warp_id = thread_id / 32;
-    unsigned int warp_num = thread_num % 32 == 0 ? thread_num / 32 : thread_num / 32 + 1;
 
-    unsigned int load = edges_length % warp_num == 0 ? edges_length / warp_num : edges_length / warp_num + 1;
-    unsigned int beg = load * warp_id;
-    unsigned int end = min(edges_length, beg + load);
+    // range is warp_offsets[warp_id] to warp_offsets[warp_id] + num_edges_to_process[warp_id] - 1
+    unsigned int beg = warp_offsets[warp_id];
+    unsigned int end = beg + num_edges_to_process[warp_id];
     unsigned int lane = thread_id % 32;
     beg += lane;
     for (unsigned int i = beg; i < end; i += 32) {
-      unsigned int u = src[i];
-      unsigned int v = dest[i];
-      unsigned int w = weight[i];
+      unsigned int u = src[T[i]];
+      unsigned int v = dest[T[i]];
+      unsigned int w = weight[T[i]];
 
-      if (is_distance_infinity_prev[u] == TRUE) {
-        continue;
-      }
-      //printf("%u isn't infinite distance\n", u);
       if (distance_prev[u] + w < distance_prev[v]) {
         // relax
-        //printf("%u %u\n", distance_cur[v], distance_prev[u] + w);
         unsigned int old_distance = atomicMin(&distance_cur[v], distance_prev[u] + w);
-        atomicMin(&is_distance_infinity_cur[v], FALSE);
-        //printf("%u %u %u %d\n", old_distance, distance_cur[v], distance_prev[u] + w, is_distance_infinity[v]);
-        // test for a change!
+
+        // test for change!
         if (old_distance != distance_cur[v]) {
-          //printf("there is change\n");
           atomicMin(noChange, FALSE);
         }
       }
-      // atomicOr(&mask[warp_id], __ballot(distance_cur[u] != distance_prev[u]));
-      // if (mask[warp_id] != 0)
-      // printf("mask[%u] = %u\n", warp_id, mask[warp_id]);
     }
-    //__syncthreads();
-
-    // set the number of edges to process for a warps
-    // if (__popc(mask[warp_id]) != 0)
-    // printf("__popc(mask[%u]) = %u\n", warp_id, __popc(mask[warp_id]));
-    // atomicMax(&num_edges_to_process[warp_id], __popc(mask[warp_id]));
-    // if (num_edges_to_process[warp_id] != 0)
-    // printf("num_edges_to_process[%u] = %u\n", warp_id, num_edges_to_process[warp_id]);
 }
 
 /* This kernel function will perform block level parallel prefix sum to get
@@ -158,11 +139,11 @@ __global__ void filtering(int edges_length,
 
   __syncthreads();
 
-  if (threadIdx.x == 0) {
-    for(int j = 0; j < blockDim.x; j++) {
-      printf("num_edges_to_process[%u] = %u | warp_offsets[%u] = %u\n", j, num_edges_to_process[j], j, warp_offsets[j]);
-    }
-  }
+  // if (threadIdx.x == 0) {
+  //   for(int j = 0; j < blockDim.x; j++) {
+  //     printf("num_edges_to_process[%u] = %u | warp_offsets[%u] = %u\n", j, num_edges_to_process[j], j, warp_offsets[j]);
+  //   }
+  // }
 
   // the new length of T is the total number of edges to process!
   *T_length = warp_offsets[blockDim.x-1] + num_edges_to_process[blockDim.x-1];
@@ -184,11 +165,11 @@ __global__ void filtering(int edges_length,
       return;
 
     // if they're not the same
-    if (distance_cur[src[i]] != distance_prev[src[i]]) {
-      printf("found src: %u, put into T[%u] |  range is [%u, %u]\n", src[i], cur_offset, warp_offsets[threadIdx.x], warp_offsets[threadIdx.x] + num_edges_to_process[threadIdx.x] - 1);
-      T[cur_offset] = i;
-      cur_offset++;
-    }
+    // if (distance_cur[src[i]] != distance_prev[src[i]]) {
+    //   printf("found src: %u, put into T[%u] |  range is [%u, %u]\n", src[i], cur_offset, warp_offsets[threadIdx.x], warp_offsets[threadIdx.x] + num_edges_to_process[threadIdx.x] - 1);
+    //   T[cur_offset] = i;
+    //   cur_offset++;
+    // }
   }
 }
 
@@ -374,7 +355,7 @@ void neighborHandler(std::vector<initial_vertex> * peeps, int blockSize, int blo
                                 cuda_T_length,
                                 cuda_edges_src);
 
-      printf("filtering done\n");
+      //printf("filtering done\n");
 
       cudaMemcpy(T, cuda_T, edges_length * sizeof(unsigned int), cudaMemcpyDeviceToHost);
       cudaMemcpy(T_length, cuda_T_length, sizeof(unsigned int), cudaMemcpyDeviceToHost);
@@ -397,25 +378,25 @@ void neighborHandler(std::vector<initial_vertex> * peeps, int blockSize, int blo
       cudaMemcpy(cuda_mask, mask, warp_num * sizeof(unsigned int), cudaMemcpyHostToDevice);
       cudaMemcpy(cuda_num_edges_to_process, num_edges_to_process, warp_num * sizeof(unsigned int), cudaMemcpyHostToDevice);
 
-      printf("past forloop\n");
+      //printf("past forloop\n");
 
-      printf("past nochange reset\n");
+      //printf("past nochange reset\n");
 
       // get current distance and copy it to both cuda_distance_prev and cuda_distance_cur
       cudaMemcpy(distance_cur, cuda_distance_cur, vertices_length * sizeof(unsigned int), cudaMemcpyDeviceToHost);
-      for (unsigned int j = 0; j < vertices_length; j++) {
-        printf("distance_cur[%u] = %u\n", j, distance_cur[j]);
-      }
+      // for (unsigned int j = 0; j < vertices_length; j++) {
+      //   printf("distance_cur[%u] = %u\n", j, distance_cur[j]);
+      // }
       cudaMemcpy(cuda_distance_prev, distance_cur, vertices_length * sizeof(unsigned int), cudaMemcpyHostToDevice);
       cudaMemcpy(cuda_distance_cur, distance_cur, vertices_length * sizeof(unsigned int), cudaMemcpyHostToDevice);
 
-      printf("past distance reset\n");
+      //printf("past distance reset\n");
 
       cudaMemcpy(is_distance_infinity, cuda_is_distance_infinity_cur, vertices_length * sizeof(unsigned int), cudaMemcpyDeviceToHost);
       cudaMemcpy(cuda_is_distance_infinity_prev, is_distance_infinity, vertices_length * sizeof(unsigned int), cudaMemcpyHostToDevice);
       cudaMemcpy(cuda_is_distance_infinity_cur, is_distance_infinity, vertices_length * sizeof(unsigned int), cudaMemcpyHostToDevice);
 
-      printf("starting outcore\n");
+      //printf("starting outcore\n");
 
       //printf("pass %u\n", i);
       work_efficient_out_of_core<<<blockNum, blockSize>>>(edges_length, cuda_edges_src,
@@ -427,14 +408,14 @@ void neighborHandler(std::vector<initial_vertex> * peeps, int blockSize, int blo
                                           cuda_warp_offsets,
                                           cuda_T, cuda_T_length);
 
-      printf("outcore done\n");
+      //printf("outcore done\n");
 
       cudaMemcpy(noChange, cuda_noChange, sizeof(int), cudaMemcpyDeviceToHost);
       if (*noChange == TRUE) break;
       *noChange = TRUE;
       cudaMemcpy(cuda_noChange, noChange, sizeof(int), cudaMemcpyHostToDevice);
 
-      printf("there was change\n");
+      //printf("there was change\n");
 
       find_num_edges_to_process<<<blockNum, blockSize>>>(edges_length,
                                   cuda_edges_src,
