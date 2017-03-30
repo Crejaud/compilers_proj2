@@ -61,7 +61,7 @@ __global__ void work_efficient_out_of_core(unsigned int edges_length,
     beg += lane;
 
     for (unsigned int i = beg; i < end; i += 32) {
-      printf("warp_id %u | beg %u | end %u | lane %u\n", warp_id, beg, end);
+      //printf("warp_id %u | beg %u | end %u | lane %u\n", warp_id, beg, end);
       unsigned int u = src[T[i]];
       unsigned int v = dest[T[i]];
       unsigned int w = weight[T[i]];
@@ -168,7 +168,7 @@ __global__ void filtering(int edges_length,
 
     //if they're not the same
     if (distance_cur[src[i]] != distance_prev[src[i]]) {
-      printf("found src: %u, put into T[%u] |  range is [%u, %u]\n", src[i], cur_offset, warp_offsets[threadIdx.x], warp_offsets[threadIdx.x] + num_edges_to_process[threadIdx.x] - 1);
+      //printf("found src: %u, put into T[%u] |  range is [%u, %u]\n", src[i], cur_offset, warp_offsets[threadIdx.x], warp_offsets[threadIdx.x] + num_edges_to_process[threadIdx.x] - 1);
       T[cur_offset] = i;
       cur_offset++;
     }
@@ -362,11 +362,11 @@ void neighborHandler(std::vector<initial_vertex> * peeps, int blockSize, int blo
       cudaMemcpy(T, cuda_T, edges_length * sizeof(unsigned int), cudaMemcpyDeviceToHost);
       cudaMemcpy(T_length, cuda_T_length, sizeof(unsigned int), cudaMemcpyDeviceToHost);
 
-      printf("T_length = %u\n", *T_length);
-      //print out T for testing
-      for (unsigned int j = 0; j < *T_length; j++) {
-        printf("T[%u] = %u\n", j, T[j]);
-      }
+      // printf("T_length = %u\n", *T_length);
+      // //print out T for testing
+      // for (unsigned int j = 0; j < *T_length; j++) {
+      //   printf("T[%u] = %u\n", j, T[j]);
+      // }
       //printf("past forloop\n");
 
       //printf("past nochange reset\n");
