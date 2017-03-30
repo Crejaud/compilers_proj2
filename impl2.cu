@@ -9,6 +9,29 @@
 #define TRUE 1
 #define FALSE 0
 
+/* Find number of edges to process */
+__global__ void find_num_edges_to_process(unsigned int edges_length,
+                            unsigned int *src,
+                            unsigned int *distance_prev,
+                            unsigned int *distance_cur,
+                            unsigned int *num_edges_to_process) {
+  unsigned int thread_id = blockDim.x * blockIdx.x + threadIdx.x;
+  unsigned int thread_num = blockDim.x * gridDim.x;
+
+  unsigned int warp_id = thread_id / 32;
+  unsigned int warp_num = thread_num % 32 == 0 ? thread_num / 32 : thread_num / 32 + 1;
+
+  unsigned int load = edges_length % warp_num == 0 ? edges_length / warp_num : edges_length / warp_num + 1;
+  unsigned int beg = load * warp_id;
+  unsigned int end = min(edges_length, beg + load);
+
+  for (unsigned int i = beg; i < end; i += 32) {
+    if (distance_cur[src[i]] != distance_prev[src[i]]) {
+      atomicAdd(&num_edges_to_process[warp_id], 1);
+    }
+  }
+}
+
 /* Work efficient edge process out of core with no shared memory */
 __global__ void work_efficient_out_of_core(unsigned int edges_length,
                             unsigned int *src,
@@ -84,6 +107,23 @@ __global__ void filtering(int edges_length,
   extern __shared__ unsigned int smem_warp_offsets[ ];
   // we can assume it will fit since there will be at most 64 warps
   unsigned int warp_id = threadIdx.x;
+
+  unsigned int load = edges_length % blockDim.x == 0 ? edges_length / blockDim.x : edges_length / blockDim.x + 1;
+  unsigned int beg = load * threadIdx.x;
+  unsigned int end = min(edges_length, beg + load);
+
+  for (unsigned int i = beg; i < end; i++) {
+    // done with filling in T
+    if (cur_offset >= warp_offsets[threadIdx.x] + num_edges_to_process[threadIdx.x])
+      return;
+
+    // if they're not the same
+    if (distance_cur[src[i]] != distance_prev[src[i]]) {
+      printf("found src: %u, put into T[%u] |  range is [%u, %u]\n", src[i], cur_offset, warp_offsets[threadIdx.x], warp_offsets[threadIdx.x] + num_edges_to_process[threadIdx.x] - 1);
+      T[cur_offset] = i;
+      cur_offset++;
+    }
+  }
 
   __syncthreads();
 
@@ -410,6 +450,12 @@ void neighborHandler(std::vector<initial_vertex> * peeps, int blockSize, int blo
       cudaMemcpy(cuda_noChange, noChange, sizeof(int), cudaMemcpyHostToDevice);
 
       printf("there was change\n");
+
+      find_num_edges_to_process(edges_length,
+                                  cuda_edges_src,
+                                  cuda_distance_prev,
+                                  cuda_distance_cur,
+                                  cuda_num_edges_to_process);
     }
   }
   // sync is in core
