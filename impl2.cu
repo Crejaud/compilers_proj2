@@ -64,7 +64,7 @@ __global__ void work_efficient_out_of_core(unsigned int edges_length,
     // set the number of edges to process for a warps
     printf("__popc(mask[%u]) = %u\n", warp_id, __popc(mask[warp_id]));
     atomicMax(&num_edges_to_process[warp_id], __popc(mask[warp_id]));
-    printf("num_edges_to_process[&u] = %u\n", warp_id, num_edges_to_process[warp_id]);
+    printf("num_edges_to_process[%u] = %u\n", warp_id, num_edges_to_process[warp_id]);
 }
 
 /* This kernel function will perform block level parallel prefix sum to get
