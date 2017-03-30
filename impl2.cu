@@ -134,8 +134,8 @@ __global__ void filtering(int edges_length,
   }
 
   // the new length of T is the total number of edges to process!
-  printf("blockDim = %u | T becomes %u, since %u and %u | warp_id = %u\n", blockDim.x, *T_length, warp_offsets[blockDim.x-1], num_edges_to_process[blockDim.x-1], threadIdx.x);
   *T_length = warp_offsets[blockDim.x-1] + num_edges_to_process[blockDim.x-1];
+  printf("blockDim = %u | T becomes %u, since %u and %u | warp_id = %u\n", blockDim.x, *T_length, warp_offsets[blockDim.x-1], num_edges_to_process[blockDim.x-1], threadIdx.x);
 
   // parallel prefix sum is done and warp_offsets is complete
 
@@ -154,6 +154,7 @@ __global__ void filtering(int edges_length,
 
     // if they're the same
     if (distance_cur[src[i]] != distance_prev[src[i]]) {
+      printf("found src: %u, put into T[%u] |  range is [%u, %u]\n", src[i], cur_offset, warp_offsets[threadIdx.x], warp_offsets[threadIdx.x] + num_edges_to_process[threadIdx.x] - 1);
       T[cur_offset] = i;
       cur_offset++;
     }
