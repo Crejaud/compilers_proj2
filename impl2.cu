@@ -152,7 +152,7 @@ __global__ void filtering(int edges_length,
     if (cur_offset >= warp_offsets[threadIdx.x] + num_edges_to_process[threadIdx.x])
       return;
 
-    // if they're the same
+    // if they're not the same
     if (distance_cur[src[i]] != distance_prev[src[i]]) {
       printf("found src: %u, put into T[%u] |  range is [%u, %u]\n", src[i], cur_offset, warp_offsets[threadIdx.x], warp_offsets[threadIdx.x] + num_edges_to_process[threadIdx.x] - 1);
       T[cur_offset] = i;
@@ -252,7 +252,7 @@ void neighborHandler(std::vector<initial_vertex> * peeps, int blockSize, int blo
     *cuda_is_distance_infinity_cur;
 
   // the distance to the first vertex is always 0
-  distance_prev[0] = 0;
+  distance_prev[0] = -1;
   distance_cur[0] = 0;
   is_distance_infinity[0] = FALSE;
 
