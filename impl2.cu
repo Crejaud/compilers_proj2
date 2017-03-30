@@ -88,7 +88,6 @@ __global__ void filtering(int edges_length,
                           unsigned int *src) {
   extern __shared__ unsigned int smem_warp_offsets[ ];
   // we can assume it will fit since there will be at most 64 warps
-  unsigned int warp_id = threadIdx.x;
 
   __syncthreads();
 
@@ -201,13 +200,13 @@ __global__ void work_efficient_in_core(unsigned int edges_length,
       unsigned int v = dest[T[i]];
       unsigned int w = weight[T[i]];
 
-      unsigned int temp_dist = distance[u] + w;
+      unsigned int temp_dest = distance[u] + w;
       if (temp_dest < distance[v]) {
         // relax
-        unsigned int old_distance = atomicMin(&distance_cur[v], distance_prev[u] + w);
+        unsigned int old_distance = atomicMin(&distance[v], temp_dest);
 
         // test for change!
-        if (old_distance != distance_cur[v]) {
+        if (old_distance != distance[v]) {
           atomicMin(noChange, FALSE);
         }
       }
