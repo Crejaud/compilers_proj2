@@ -362,8 +362,6 @@ void neighborHandler(std::vector<initial_vertex> * peeps, int blockSize, int blo
       //printf("filtering done\n");
       filteringTime += getTime();
 
-      setTime();
-
       cudaMemcpy(T, cuda_T, edges_length * sizeof(unsigned int), cudaMemcpyDeviceToHost);
       cudaMemcpy(T_length, cuda_T_length, sizeof(unsigned int), cudaMemcpyDeviceToHost);
 
@@ -392,6 +390,7 @@ void neighborHandler(std::vector<initial_vertex> * peeps, int blockSize, int blo
 
       //printf("starting outcore\n");
 
+      setTime();
       //printf("pass %u\n", i);
       work_efficient_out_of_core<<<blockNum, blockSize>>>(edges_length, cuda_edges_src,
                                           cuda_edges_dest, cuda_edges_weight,
