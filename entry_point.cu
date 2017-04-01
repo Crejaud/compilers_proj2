@@ -204,17 +204,22 @@ int main( int argc, char** argv )
 			mergeSort(edges_src, edges_dest, edges_weight, 0, edges_length - 1);
 		}
 
-		switch(processingMethod){
-		case ProcessingType::Push:
-		    puller(bsize, bcount, sync, smem, distance,
-					edges_src, edges_dest, edges_weight, edges_length, vertices_length);
-		    break;
-		case ProcessingType::Neighbor:
-		    neighborHandler(bsize, bcount, sync, smem, distance,
-					edges_src, edges_dest, edges_weight, edges_length, vertices_length);
-		    break;
-		default:
-		    own(&parsedGraph, bsize, bcount);
+		int[] bsizes = {256, 384, 512, 768, 1024};
+		int[] bcounts = {8, 5, 4, 2, 2};
+
+		for (int i = 0; i < 5; i++) {
+			switch(processingMethod){
+			case ProcessingType::Push:
+			    puller(bsizes[i], bcounts[i], sync, smem, distance,
+						edges_src, edges_dest, edges_weight, edges_length, vertices_length);
+			    break;
+			case ProcessingType::Neighbor:
+			    neighborHandler(bsizes[i], bcount[i], sync, smem, distance,
+						edges_src, edges_dest, edges_weight, edges_length, vertices_length);
+			    break;
+			default:
+			    own(&parsedGraph, bsize, bcount);
+			}
 		}
 
 		// print it out to test
