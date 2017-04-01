@@ -214,7 +214,7 @@ int main( int argc, char** argv )
 						edges_src, edges_dest, edges_weight, edges_length, vertices_length);
 			    break;
 			case ProcessingType::Neighbor:
-			    neighborHandler(bsizes[i], bcount[i], sync, smem, distance,
+			    neighborHandler(bsizes[i], bcounts[i], sync, smem, distance,
 						edges_src, edges_dest, edges_weight, edges_length, vertices_length);
 			    break;
 			default:
