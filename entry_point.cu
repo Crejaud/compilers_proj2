@@ -206,11 +206,8 @@ int main( int argc, char** argv )
 			std::cout << "Edges sorted by Source.\n";
 		}
 
-		//int bsizes[5] = {256, 384, 512, 768, 1024};
-		//int bcounts[5] = {8, 5, 4, 2, 2};
-
-		int bsizes[5] = {1024, 768, 512, 384, 256};
-		int bcounts[5] = {2, 2, 4, 5, 8};
+		int bsizes[5] = {256, 384, 512, 768, 1024};
+		int bcounts[5] = {8, 5, 4, 2, 2};
 
 		for (int i = 0; i < 5; i++) {
 			switch(processingMethod){
@@ -230,7 +227,10 @@ int main( int argc, char** argv )
 		// print it out to test
     char outputStr[100];
     for(int i = 0; i < parsedGraph.size(); i++) {
-      sprintf(outputStr, "%u:%u\n", i, distance[i]);
+			if (distance[i] == -1)
+				sprintf(outputStr, "%u:INF\n", i);
+			else
+      	sprintf(outputStr, "%u:%u\n", i, distance[i]);
       outputFile << outputStr;
     }
 
