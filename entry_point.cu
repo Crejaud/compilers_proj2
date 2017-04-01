@@ -62,7 +62,7 @@ int main( int argc, char** argv )
 		bool nonDirectedGraph = false;		// By default, the graph is directed.
 		ProcessingType processingMethod = ProcessingType::Unknown;
 		syncMethod = OutOfCore;
-		int shouldSortByDestination = 0;
+		int shouldSortByDestination = -1;
 
 
 		/********************************
@@ -200,7 +200,7 @@ int main( int argc, char** argv )
 			mergeSort(edges_dest, edges_src, edges_weight, 0, edges_length - 1);
 		}
 		// sort the edges by source
-		else {
+		else if (shouldSortByDestination == 0){
 			mergeSort(edges_src, edges_dest, edges_weight, 0, edges_length - 1);
 		}
 
