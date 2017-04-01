@@ -461,9 +461,6 @@ void neighborHandler(int blockSize, int blockNum,
   cudaFree(cuda_T);
   cudaFree(cuda_T_length);
 
-  free(edges_src);
-  free(edges_dest);
-  free(edges_weight);
   free(distance_prev);
   free(noChange);
   free(num_edges_to_process);

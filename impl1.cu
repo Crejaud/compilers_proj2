@@ -427,9 +427,6 @@ void puller(int blockSize, int blockNum,
     cudaFree(cuda_is_distance_infinity_prev);
     cudaFree(cuda_is_distance_infinity_cur);
 
-    free(edges_src);
-    free(edges_dest);
-    free(edges_weight);
     free(distance_prev);
     free(noChange);
     free(is_distance_infinity);
