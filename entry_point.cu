@@ -23,6 +23,9 @@ enum SmemMode smemMethod;
 int sync = -1;
 int smem = -1;
 
+void mergeSort(unsigned int *arr, unsigned int *other, unsigned int *weight, unsigned int l, unsigned int r);
+void merge(unsigned int *arr, unsigned int *other, unsigned int *weight, unsigned int l, unsigned int m, unsigned int r);
+
 // Open files safely.
 template <typename T_file>
 void openFileToAccess( T_file& input_file, std::string file_name ) {
