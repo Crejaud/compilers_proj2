@@ -62,6 +62,7 @@ int main( int argc, char** argv )
 		bool nonDirectedGraph = false;		// By default, the graph is directed.
 		ProcessingType processingMethod = ProcessingType::Unknown;
 		syncMethod = OutOfCore;
+		int shouldSortByDestination = 0;
 
 
 		/********************************
@@ -110,7 +111,6 @@ int main( int argc, char** argv )
            exit;
          }
 			}
-			int shouldSortByDestination = 0;
 			else if ( !strcmp(argv[iii], "--sort_by_dest") && iii != argc-1 ) {
 				if ( !strcmp(argv[iii+1], "yes") ) {
 				        shouldSortByDestination = 1;
