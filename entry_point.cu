@@ -44,7 +44,8 @@ int main( int argc, char** argv )
                         Output path: E.g., --output output.txt\n\
 			Processing method: E.g., --method bmf (bellman-ford), or tpe (to-process-edge), or opt (one further optimizations)\n\
 			Shared memory usage: E.g., --usesmem yes, or no \n\
-			Sync method: E.g., --sync incore, or outcore\n";
+			Sync method: E.g., --sync incore, or outcore\n\
+			Sort method: E.g., --sort_by_dest yes, or no\n";
 
 	try {
 
@@ -103,6 +104,19 @@ int main( int argc, char** argv )
 									}
         else{
            std::cerr << "\n Un-recognized usesmem parameter value \n\n";
+           exit;
+         }
+			}
+			int shouldSortByDestination = 0;
+			else if ( !strcmp(argv[iii], "--sort_by_dest") && iii != argc-1 ) {
+				if ( !strcmp(argv[iii+1], "yes") ) {
+				        shouldSortByDestination = 1;
+							}
+				else if ( !strcmp(argv[iii+1], "no") ) {
+    				        shouldSortByDestination = 0;
+									}
+        else{
+           std::cerr << "\n Un-recognized sort_by_dest parameter value \n\n";
            exit;
          }
 			}
@@ -178,8 +192,14 @@ int main( int argc, char** argv )
       }
     }
 
-		// sort the edges
-		
+		// sort the edges by destination
+		if (shouldSortByDestination == 1) {
+			mergeSort(edges_dest, edges_src, edges_weight, 0, edges_length - 1);
+		}
+		// sort the edges by source
+		else {
+			mergeSort(edges_src, edges_dest, edges_weight, 0, edges_length - 1);
+		}
 
 		switch(processingMethod){
 		case ProcessingType::Push:
@@ -219,4 +239,82 @@ int main( int argc, char** argv )
 		return( EXIT_FAILURE );
 	}
 
+}
+
+void mergeSort(unsigned int *arr, unsigned int *other, unsigned int *weight, unsigned int l, unsigned int r) {
+	if (l < r) {
+		unsigned int m = l + (r - l)/2;
+
+		mergeSort(arr, other, weight, l, m);
+		mergeSort(arr, other, weight, m+1, r);
+
+		merge(arr, other, weight, l, m, r);
+	}
+}
+
+void merge(unsigned int *arr, unsigned int *other, unsigned int *weight, unsigned int l, unsigned int m, unsigned int r) {
+	unsigned int i, j, k;
+	unsigned int n1 = m - l + 1;
+	unsigned int n2 = r - m;
+
+	unsigned int *L1 = (unsigned int *) malloc(n1 * sizeof(unsigned int));
+	unsigned int *L2 = (unsigned int *) malloc(n1 * sizeof(unsigned int));
+	unsigned int *L3 = (unsigned int *) malloc(n1 * sizeof(unsigned int));
+
+	unsigned int *R1 = (unsigned int *) malloc(n2 * sizeof(unsigned int));
+	unsigned int *R2 = (unsigned int *) malloc(n2 * sizeof(unsigned int));
+	unsigned int *R3 = (unsigned int *) malloc(n2 * sizeof(unsigned int));
+
+	for (i = 0; i < n1; i++) {
+		L1[i] = arr[l + i];
+		L2[i] = other[l + i];
+		L3[i] = weight[l + i];
+	}
+	for (j = 0; j < n2; j++) {
+		R1[j] = arr[m + j + 1];
+		R2[j] = other[m + j + 1];
+		R3[j] = weight[m + j + 1];
+	}
+
+	i = 0;
+	j = 0;
+	k = l;
+	while (i < n1 && j < n2) {
+		if (L1[i] <= R1[j]) {
+			arr[k] = L1[i];
+			other[k] = L2[i];
+			weight[k] = L3[i];
+			i++;
+		}
+		else {
+			arr[k] = R1[j];
+			other[k] = R2[j];
+			weight[k] = R3[j];
+			j++;
+		}
+		k++;
+	}
+
+	while (i < n1) {
+		arr[k] = L1[i];
+		other[k] = L2[i];
+		weight[k] = L3[i];
+		i++;
+		k++;
+	}
+
+	while (j < n2) {
+		arr[k] = R1[j];
+		other[k] = R2[j];
+		weight[k] = R3[j];
+		j++;
+		k++;
+	}
+
+	free(L1);
+	free(L2);
+	free(L3);
+	free(R1);
+	free(R2);
+	free(R3);
 }
