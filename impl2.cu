@@ -460,10 +460,12 @@ void neighborHandler(int blockSize, int blockNum,
   cudaFree(cuda_num_edges_to_process);
   cudaFree(cuda_T);
   cudaFree(cuda_T_length);
+  cudaFree(cuda_warp_offsets);
 
   free(distance_prev);
   free(noChange);
   free(num_edges_to_process);
   free(T);
   free(T_length);
+  free(warp_offsets);
 }

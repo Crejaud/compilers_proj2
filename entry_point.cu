@@ -198,10 +198,12 @@ int main( int argc, char** argv )
 		// sort the edges by destination
 		if (shouldSortByDestination == 1) {
 			mergeSort(edges_dest, edges_src, edges_weight, 0, edges_length - 1);
+			std::cout << "Edges sorted by Destination.\n";
 		}
 		// sort the edges by source
 		else if (shouldSortByDestination == 0){
 			mergeSort(edges_src, edges_dest, edges_weight, 0, edges_length - 1);
+			std::cout << "Edges sorted by Source.\n";
 		}
 
 		int bsizes[5] = {256, 384, 512, 768, 1024};
@@ -209,16 +211,16 @@ int main( int argc, char** argv )
 
 		for (int i = 0; i < 5; i++) {
 			switch(processingMethod){
-			case ProcessingType::Push:
-			    puller(bsizes[i], bcounts[i], sync, smem, distance,
-						edges_src, edges_dest, edges_weight, edges_length, vertices_length);
-			    break;
-			case ProcessingType::Neighbor:
-			    neighborHandler(bsizes[i], bcounts[i], sync, smem, distance,
-						edges_src, edges_dest, edges_weight, edges_length, vertices_length);
-			    break;
-			default:
-			    own(&parsedGraph, bsize, bcount);
+				case ProcessingType::Push:
+				    puller(bsizes[i], bcounts[i], sync, smem, distance,
+							edges_src, edges_dest, edges_weight, edges_length, vertices_length);
+				    break;
+				case ProcessingType::Neighbor:
+				    neighborHandler(bsizes[i], bcounts[i], sync, smem, distance,
+							edges_src, edges_dest, edges_weight, edges_length, vertices_length);
+				    break;
+				default:
+				    own(&parsedGraph, bsize, bcount);
 			}
 		}
 
