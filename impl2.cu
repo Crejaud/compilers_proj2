@@ -273,7 +273,6 @@ void neighborHandler(int blockSize, int blockNum,
   T = (unsigned int *) malloc(edges_length * sizeof(unsigned int));
   T_length = (unsigned int *) malloc(sizeof(unsigned int));
 
-  int edge_index = 0;
   // get values for each array
   for (unsigned int edge_index = 0; edge_index < edges_length; edge_index++) {
     if (edges_src[edge_index] == 0) {
