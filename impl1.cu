@@ -310,11 +310,6 @@ void puller(int blockSize, int blockNum,
       is_distance_infinity[i] = TRUE;
     }
 
-    // malloc edges arrays
-    edges_src = (unsigned int *) malloc(edges_length * sizeof(unsigned int));
-    edges_dest = (unsigned int *) malloc(edges_length * sizeof(unsigned int));
-    edges_weight = (unsigned int *) malloc(edges_length * sizeof(unsigned int));
-
     cudaMalloc((void **)&cuda_edges_src, edges_length * sizeof(unsigned int));
     cudaMalloc((void **)&cuda_edges_dest, edges_length * sizeof(unsigned int));
     cudaMalloc((void **)&cuda_edges_weight, edges_length * sizeof(unsigned int));

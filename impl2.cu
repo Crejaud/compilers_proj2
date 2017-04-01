@@ -267,9 +267,6 @@ void neighborHandler(int blockSize, int blockNum,
   }
 
   // malloc edges arrays
-  edges_src = (unsigned int *) malloc(edges_length * sizeof(unsigned int));
-  edges_dest = (unsigned int *) malloc(edges_length * sizeof(unsigned int));
-  edges_weight = (unsigned int *) malloc(edges_length * sizeof(unsigned int));
   T = (unsigned int *) malloc(edges_length * sizeof(unsigned int));
   T_length = (unsigned int *) malloc(sizeof(unsigned int));
 
