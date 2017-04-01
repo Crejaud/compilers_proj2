@@ -204,8 +204,8 @@ int main( int argc, char** argv )
 			mergeSort(edges_src, edges_dest, edges_weight, 0, edges_length - 1);
 		}
 
-		int[] bsizes = {256, 384, 512, 768, 1024};
-		int[] bcounts = {8, 5, 4, 2, 2};
+		int bsizes[5] = {256, 384, 512, 768, 1024};
+		int bcounts[5] = {8, 5, 4, 2, 2};
 
 		for (int i = 0; i < 5; i++) {
 			switch(processingMethod){
