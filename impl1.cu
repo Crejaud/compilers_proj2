@@ -274,7 +274,11 @@ __global__ void edge_process_in_core(unsigned int edges_length,
     }
 }
 
-void puller(std::vector<initial_vertex> * peeps, int blockSize, int blockNum, int sync, int smem, unsigned int *distance_cur){
+void puller(int blockSize, int blockNum,
+  int sync, int smem, unsigned int *distance_cur,
+  unsigned int *edges_src, unsigned int *edges_dest,
+  unsigned int *edges_weight, unsigned int edges_length,
+  unsigned int vertices_length){
     /* Will use these arrays instead of a vector
     * edges_src : array of all edges (indexed 0 to n) where the value is the vertex source index of the edge (since edges are directed)
     * edges_dest : same as above, except it tells the vertex destination index
@@ -284,9 +288,6 @@ void puller(std::vector<initial_vertex> * peeps, int blockSize, int blockNum, in
     */
 
     /* Allocate here... */
-    unsigned int *edges_src, *edges_dest, *edges_weight;
-    unsigned int edges_length = 0;
-    unsigned int vertices_length = peeps->size();
     unsigned int *distance_prev = (unsigned int *) malloc(vertices_length * sizeof(unsigned int));
     int *noChange = (int *) malloc(sizeof(int));
     int *is_distance_infinity = (int *) malloc(vertices_length * sizeof(int));
@@ -309,29 +310,10 @@ void puller(std::vector<initial_vertex> * peeps, int blockSize, int blockNum, in
       is_distance_infinity[i] = TRUE;
     }
 
-    // get edges_length
-    for(std::vector<int>::size_type i = 0; i != vertices_length; i++) {
-      edges_length += peeps->at(i).nbrs.size();
-    }
-
     // malloc edges arrays
     edges_src = (unsigned int *) malloc(edges_length * sizeof(unsigned int));
     edges_dest = (unsigned int *) malloc(edges_length * sizeof(unsigned int));
     edges_weight = (unsigned int *) malloc(edges_length * sizeof(unsigned int));
-
-
-    int edge_index = 0;
-    // get values for each array
-    for(std::vector<int>::size_type i = 0; i != vertices_length; i++) {
-      for(std::vector<int>::size_type j = 0; j != peeps->at(i).nbrs.size(); j++) {
-        edges_src[edge_index] = peeps->at(i).nbrs[j].srcIndex;
-        edges_dest[edge_index] = i;
-        edges_weight[edge_index] = peeps->at(i).nbrs[j].edgeValue.weight;
-        //printf("src: %u | dest: %u | weight: %u\n", edges_src[edge_index], edges_dest[edge_index], edges_weight[edge_index]);
-
-        edge_index++;
-      }
-    }
 
     cudaMalloc((void **)&cuda_edges_src, edges_length * sizeof(unsigned int));
     cudaMalloc((void **)&cuda_edges_dest, edges_length * sizeof(unsigned int));

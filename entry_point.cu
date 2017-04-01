@@ -149,12 +149,46 @@ int main( int argc, char** argv )
 		 ********************************/
 
 		unsigned int * distance = (unsigned int *) malloc(parsedGraph.size() * sizeof(unsigned int));
+
+		unsigned int *edges_src, *edges_dest, *edges_weight;
+    unsigned int edges_length = 0;
+		unsigned int vertices_length = parsedGraph.size();
+
+    // get edges_length
+    for(std::vector<int>::size_type i = 0; i != vertices_length; i++) {
+      edges_length += parsedGraph.at(i).nbrs.size();
+    }
+
+    // malloc edges arrays
+    edges_src = (unsigned int *) malloc(edges_length * sizeof(unsigned int));
+    edges_dest = (unsigned int *) malloc(edges_length * sizeof(unsigned int));
+    edges_weight = (unsigned int *) malloc(edges_length * sizeof(unsigned int));
+
+
+    int edge_index = 0;
+    // get values for each array
+    for(std::vector<int>::size_type i = 0; i != vertices_length; i++) {
+      for(std::vector<int>::size_type j = 0; j != parsedGraph.at(i).nbrs.size(); j++) {
+        edges_src[edge_index] = parsedGraph.at(i).nbrs[j].srcIndex;
+        edges_dest[edge_index] = i;
+        edges_weight[edge_index] = parsedGraph.at(i).nbrs[j].edgeValue.weight;
+        //printf("src: %u | dest: %u | weight: %u\n", edges_src[edge_index], edges_dest[edge_index], edges_weight[edge_index]);
+
+        edge_index++;
+      }
+    }
+
+		// sort the edges
+		
+
 		switch(processingMethod){
 		case ProcessingType::Push:
-		    puller(&parsedGraph, bsize, bcount, sync, smem, distance);
+		    puller(bsize, bcount, sync, smem, distance,
+					edges_src, edges_dest, edges_weight, edges_length, vertices_length);
 		    break;
 		case ProcessingType::Neighbor:
-		    neighborHandler(&parsedGraph, bsize, bcount, sync, smem, distance);
+		    neighborHandler(bsize, bcount, sync, smem, distance,
+					edges_src, edges_dest, edges_weight, edges_length, vertices_length);
 		    break;
 		default:
 		    own(&parsedGraph, bsize, bcount);
