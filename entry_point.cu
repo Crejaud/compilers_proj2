@@ -195,15 +195,32 @@ int main( int argc, char** argv )
       }
     }
 
+		unsigned int temp_offset = 0;
+
 		// sort the edges by destination
 		if (shouldSortByDestination == 1) {
 			mergeSort(edges_dest, edges_src, edges_weight, 0, edges_length - 1);
 			std::cout << "Edges sorted by Destination.\n";
+			// if the vertices do not start at 0
+			if (edges_dest[0] != 0) {
+				temp_offset = edges_dest[0];
+				for (unsigned int i = 0; i < edges_length; i++) {
+					edges_dest[i] -= temp_offset;
+					edges_src[i] -= temp_offset;
+				}
+			}
 		}
 		// sort the edges by source
 		else if (shouldSortByDestination == 0){
 			mergeSort(edges_src, edges_dest, edges_weight, 0, edges_length - 1);
 			std::cout << "Edges sorted by Source.\n";
+			if (edges_src[0] != 0) {
+				temp_offset = edges_src[0];
+				for (unsigned int i = 0; i < edges_length; i++) {
+					edges_dest[i] -= temp_offset;
+					edges_src[i] -= temp_offset;
+				}
+			}
 		}
 
 		int bsizes[5] = {256, 384, 512, 768, 1024};
@@ -228,9 +245,9 @@ int main( int argc, char** argv )
     char outputStr[100];
     for(int i = 0; i < parsedGraph.size(); i++) {
 			if (distance[i] == -1)
-				sprintf(outputStr, "%u:INF\n", i);
+				sprintf(outputStr, "%u:INF\n", i+temp_offset);
 			else
-      	sprintf(outputStr, "%u:%u\n", i, distance[i]);
+      	sprintf(outputStr, "%u:%u\n", i+temp_offset, distance[i]);
       outputFile << outputStr;
     }
 
