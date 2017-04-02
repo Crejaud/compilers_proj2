@@ -92,13 +92,21 @@ __global__ void filtering(unsigned int edges_length,
                           unsigned int *T,
                           unsigned int *T_length,
                           unsigned int *src) {
+  if (threadIdx.x == 0) {
+    printf("filtering before shared memory. Blockdim = %u\n", blockDim.x);
+  }
+
   extern __shared__ unsigned int smem_warp_offsets[ ];
   // we can assume it will fit since there will be at most 64 warps
+
+  if (threadIdx.x == 0) {
+    printf("filtering after shared memory. Blockdim = %u\n", blockDim.x);
+  }
 
   __syncthreads();
 
   if (threadIdx.x == 0) {
-    printf("entered filtering. Blockdim = %u\n", blockDim.x);
+    printf("filtering. Blockdim = %u\n", blockDim.x);
   }
 
   unsigned int offset = 1;
@@ -113,6 +121,10 @@ __global__ void filtering(unsigned int edges_length,
     smem_warp_offsets[2*threadIdx.x] = num_edges_to_process[2*threadIdx.x];
     smem_warp_offsets[2*threadIdx.x+1] = num_edges_to_process[2*threadIdx.x+1];
 
+    if (threadIdx.x == 0) {
+      printf("setting shared memory\n");
+    }
+
     for (unsigned int d = blockDim.x>>1; d > 0; d >>= 1) {
       __syncthreads();
 
@@ -126,6 +138,7 @@ __global__ void filtering(unsigned int edges_length,
     }
 
     if (threadIdx.x == 0) {
+      printf("first pass done\n");
       smem_warp_offsets[blockDim.x - 1] = 0;
     }
 
@@ -143,10 +156,18 @@ __global__ void filtering(unsigned int edges_length,
       }
     }
 
+    if (threadIdx.x == 0) {
+      printf("second pass done\n");
+    }
+
     __syncthreads();
 
     warp_offsets[2*threadIdx.x] = smem_warp_offsets[2*threadIdx.x];
     warp_offsets[2*threadIdx.x+1] = smem_warp_offsets[2*threadIdx.x + 1];
+
+    if (threadIdx.x == 0) {
+      printf("warp_offset set\n");
+    }
   }
 
   __syncthreads();
