@@ -14,7 +14,7 @@ __global__ void find_num_edges_to_process(unsigned int edges_length,
                             unsigned int *src,
                             unsigned int *distance_prev,
                             unsigned int *distance_cur,
-                            unsigned int *num_edges_to_process
+                            unsigned int *num_edges_to_process,
                             unsigned int *T,
                             unsigned int *T_length) {
   unsigned int thread_id = blockDim.x * blockIdx.x + threadIdx.x;
