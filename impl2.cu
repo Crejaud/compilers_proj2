@@ -144,21 +144,26 @@ __global__ void filtering(unsigned int edges_length,
     }
 
     for (unsigned int d = 1; d < blockDim.x; d *= 2) {
-      printf("offset before %u\n", offset);
+      if (threadIdx.x == 0)
+        printf("offset before %u\n", offset);
       offset >>= 1;
-      printf("offset after %u\n", offset);
+      if (threadIdx.x == 0)
+        printf("offset after %u\n", offset);
       __syncthreads();
 
       if (threadIdx.x < d) {
-        printf("inside if\n");
+        if (threadIdx.x == 0)
+          printf("inside if\n");
         unsigned int ai = offset*(2*threadIdx.x+1)-1;
         unsigned int bi = offset*(2*threadIdx.x+2)-1;
 
-        printf("before t is set | ai %u | bi %u\n", ai, bi);
+        if (threadIdx.x == 0)
+          printf("before t is set | ai %u | bi %u\n", ai, bi);
         unsigned int t = smem_warp_offsets[ai];
         smem_warp_offsets[ai] = smem_warp_offsets[bi];
         smem_warp_offsets[bi] += t;
-        printf("after swap\n");
+        if (threadIdx.x == 0)
+          printf("after swap\n");
       }
     }
 
