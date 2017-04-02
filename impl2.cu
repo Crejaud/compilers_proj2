@@ -151,6 +151,9 @@ __global__ void filtering(unsigned int edges_length,
         printf("offset after %u\n", offset);
       __syncthreads();
 
+      if (offset == 0)
+        break;
+
       if (threadIdx.x < d) {
         if (threadIdx.x == 0)
           printf("inside if\n");
