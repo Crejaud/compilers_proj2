@@ -92,7 +92,7 @@ __global__ void filtering(unsigned int edges_length,
                           unsigned int *T,
                           unsigned int *T_length,
                           unsigned int *src,
-                          unsigned int *real_warp_num) {
+                          unsigned int real_warp_num) {
   //if (threadIdx.x == 0) {
   //  printf("filtering before shared memory. Blockdim = %u\n", blockDim.x);
   //}
