@@ -394,8 +394,6 @@ void neighborHandler(int blockSize, int blockNum,
       //printf("past forloop\n");
 
       //printf("past nochange reset\n");
-      setTime();
-
       // get current distance and copy it to both cuda_distance_prev and cuda_distance_cur
       cudaMemcpy(distance_cur, cuda_distance_cur, vertices_length * sizeof(unsigned int), cudaMemcpyDeviceToHost);
       // for (unsigned int j = 0; j < vertices_length; j++) {
@@ -409,6 +407,7 @@ void neighborHandler(int blockSize, int blockNum,
       //printf("starting outcore\n");
 
       //printf("pass %u\n", i);
+      setTime();
       work_efficient_out_of_core<<<blockNum, blockSize>>>(edges_length, cuda_edges_src,
                                           cuda_edges_dest, cuda_edges_weight,
                                           cuda_distance_prev, cuda_distance_cur,
