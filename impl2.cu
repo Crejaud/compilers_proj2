@@ -417,6 +417,8 @@ void neighborHandler(int blockSize, int blockNum,
 
       //printf("filtering done\n");
       filteringTime += getTime();
+      
+      cudaDeviceSynchronize();
 
       cudaMemcpy(distance_cur, cuda_distance_cur, vertices_length * sizeof(unsigned int), cudaMemcpyDeviceToHost);
       // for (unsigned int j = 0; j < vertices_length; j++) {
@@ -435,6 +437,8 @@ void neighborHandler(int blockSize, int blockNum,
                                           cuda_T,
                                           cuda_T_length);
       computingTime += getTime();
+
+      cudaDeviceSynchronize();
 
       cudaMemcpy(noChange, cuda_noChange, sizeof(int), cudaMemcpyDeviceToHost);
       if (*noChange == TRUE) break;
@@ -459,6 +463,7 @@ void neighborHandler(int blockSize, int blockNum,
                                   cuda_num_edges_to_process,
                                   cuda_T,
                                   cuda_T_length);
+      cudaDeviceSynchronize();
     }
   }
 
