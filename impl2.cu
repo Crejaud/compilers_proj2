@@ -84,7 +84,7 @@ __global__ void work_efficient_out_of_core(unsigned int edges_length,
 /* This kernel function will perform block level parallel prefix sum to get
  * the offset of every warp's first to-process edge in the final to-process edge
  * list T */
-__global__ void filtering(int edges_length,
+__global__ void filtering(unsigned int edges_length,
                           unsigned int *num_edges_to_process,
                           unsigned int *warp_offsets,
                           unsigned int *distance_prev,
@@ -417,8 +417,6 @@ void neighborHandler(int blockSize, int blockNum,
 
       //printf("filtering done\n");
       filteringTime += getTime();
-      
-      cudaDeviceSynchronize();
 
       cudaMemcpy(distance_cur, cuda_distance_cur, vertices_length * sizeof(unsigned int), cudaMemcpyDeviceToHost);
       // for (unsigned int j = 0; j < vertices_length; j++) {
@@ -437,8 +435,6 @@ void neighborHandler(int blockSize, int blockNum,
                                           cuda_T,
                                           cuda_T_length);
       computingTime += getTime();
-
-      cudaDeviceSynchronize();
 
       cudaMemcpy(noChange, cuda_noChange, sizeof(int), cudaMemcpyDeviceToHost);
       if (*noChange == TRUE) break;
@@ -463,7 +459,6 @@ void neighborHandler(int blockSize, int blockNum,
                                   cuda_num_edges_to_process,
                                   cuda_T,
                                   cuda_T_length);
-      cudaDeviceSynchronize();
     }
   }
 
