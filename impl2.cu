@@ -97,9 +97,17 @@ __global__ void filtering(int edges_length,
 
   __syncthreads();
 
+  if (threadIdx.x == 0) {
+    printf("entered filtering. Blockdim = %u\n", blockDim.x);
+  }
+
   unsigned int offset = 1;
 
   if (threadIdx.x*2+1 < blockDim.x) {
+
+    if (threadIdx.x == 0) {
+      printf("entering parallel prefix sum\n");
+    }
     // do parallel prefix sum!
 
     smem_warp_offsets[2*threadIdx.x] = num_edges_to_process[2*threadIdx.x];
