@@ -91,7 +91,8 @@ __global__ void filtering(unsigned int edges_length,
                           unsigned int *distance_cur,
                           unsigned int *T,
                           unsigned int *T_length,
-                          unsigned int *src) {
+                          unsigned int *src,
+                          unsigned int *real_warp_num) {
   //if (threadIdx.x == 0) {
   //  printf("filtering before shared memory. Blockdim = %u\n", blockDim.x);
   //}
@@ -151,9 +152,6 @@ __global__ void filtering(unsigned int edges_length,
       //  printf("offset after %u\n", offset);
       __syncthreads();
 
-      if (offset == 0)
-        break;
-
       if (threadIdx.x < d) {
         //if (threadIdx.x == 0)
         //  printf("inside if\n");
@@ -176,7 +174,15 @@ __global__ void filtering(unsigned int edges_length,
 
     __syncthreads();
 
+    // remove threads that aren't in the real warp size range
+    if (2*threadIdx.x >= real_warp_num)
+      return;
+
     warp_offsets[2*threadIdx.x] = smem_warp_offsets[2*threadIdx.x];
+
+    if (2*threadIdx.x + 1 >= real_warp_num)
+      return;
+
     warp_offsets[2*threadIdx.x+1] = smem_warp_offsets[2*threadIdx.x + 1];
 
     //if (threadIdx.x == 0) {
@@ -194,7 +200,7 @@ __global__ void filtering(unsigned int edges_length,
 
   // the new length of T is the total number of edges to process
   if (threadIdx.x == 0) {
-    *T_length = warp_offsets[blockDim.x-1] + num_edges_to_process[blockDim.x-1];
+    *T_length = warp_offsets[real_warp_num-1] + num_edges_to_process[real_warp_num-1];
     // test
     //printf("blockDim = %u | T_length %u, since %u and %u | warp_id = %u\n", blockDim.x, *T_length, warp_offsets[blockDim.x-1], num_edges_to_process[blockDim.x-1], threadIdx.x);
   }
@@ -206,7 +212,7 @@ __global__ void filtering(unsigned int edges_length,
 
   unsigned int cur_offset = warp_offsets[threadIdx.x];
 
-  unsigned int load = edges_length % blockDim.x == 0 ? edges_length / blockDim.x : edges_length / blockDim.x + 1;
+  unsigned int load = edges_length % real_warp_num == 0 ? edges_length / real_warp_num : edges_length / real_warp_num + 1;
   unsigned int beg = load * threadIdx.x;
   unsigned int end = min(edges_length, beg + load);
 
@@ -292,12 +298,13 @@ void neighborHandler(int blockSize, int blockNum,
   // this is the total number of warps
   unsigned int warp_num = blockSize * blockNum % 32 == 0 ? blockSize * blockNum / 32 : blockSize * blockNum / 32 + 1;
 
-  num_edges_to_process = (unsigned int *) malloc( warp_num * sizeof(unsigned int));
+  num_edges_to_process = (unsigned int *) malloc( 64 * sizeof(unsigned int));
   warp_offsets = (unsigned int *) malloc( warp_num * sizeof(unsigned int));
 
-  for(int i = 0; i < warp_num; i++) {
+  for(int i = 0; i < 64; i++) {
     num_edges_to_process[i] = 0;
-    warp_offsets[i] = 0;
+    if (i < warp_num)
+      warp_offsets[i] = 0;
   }
 
   *noChange = TRUE;
@@ -343,7 +350,7 @@ void neighborHandler(int blockSize, int blockNum,
   cudaMalloc((void **)&cuda_noChange, sizeof(int));
   cudaMalloc((void **)&cuda_T, edges_length * sizeof(unsigned int));
   cudaMalloc((void **)&cuda_T_length, sizeof(unsigned int));
-  cudaMalloc((void **)&cuda_num_edges_to_process, warp_num * sizeof(unsigned int));
+  cudaMalloc((void **)&cuda_num_edges_to_process, 64 * sizeof(unsigned int));
   cudaMalloc((void **)&cuda_warp_offsets, warp_num * sizeof(unsigned int));
 
   cudaMemcpy(cuda_edges_src, edges_src, edges_length * sizeof(unsigned int), cudaMemcpyHostToDevice);
@@ -354,7 +361,7 @@ void neighborHandler(int blockSize, int blockNum,
   cudaMemcpy(cuda_noChange, noChange, sizeof(int), cudaMemcpyHostToDevice);
   cudaMemcpy(cuda_T, T, edges_length * sizeof(unsigned int), cudaMemcpyHostToDevice);
   cudaMemcpy(cuda_T_length, T_length, sizeof(unsigned int), cudaMemcpyHostToDevice);
-  cudaMemcpy(cuda_num_edges_to_process, num_edges_to_process, warp_num * sizeof(unsigned int), cudaMemcpyHostToDevice);
+  cudaMemcpy(cuda_num_edges_to_process, num_edges_to_process, 64 * sizeof(unsigned int), cudaMemcpyHostToDevice);
   cudaMemcpy(cuda_warp_offsets, warp_offsets, warp_num * sizeof(unsigned int), cudaMemcpyHostToDevice);
 
 
@@ -366,14 +373,15 @@ void neighborHandler(int blockSize, int blockNum,
     for (unsigned int i = 1; i < vertices_length; i++) {
       //printf("pass %u, starting filtering\n", i);
       setTime();
-      filtering<<<1, warp_num, warp_num * sizeof(unsigned int)>>>(edges_length,
+      filtering<<<1, 64, 64 * sizeof(unsigned int)>>>(edges_length,
                                 cuda_num_edges_to_process,
                                 cuda_warp_offsets,
                                 cuda_distance_prev,
                                 cuda_distance_cur,
                                 cuda_T,
                                 cuda_T_length,
-                                cuda_edges_src);
+                                cuda_edges_src,
+                                warp_num);
 
       //printf("filtering done\n");
       filteringTime += getTime();
@@ -420,7 +428,7 @@ void neighborHandler(int blockSize, int blockNum,
       cudaMemcpy(num_edges_to_process, cuda_num_edges_to_process, warp_num * sizeof(unsigned int), cudaMemcpyDeviceToHost);
 
       // reset these values back to 0
-      for(unsigned int j = 0; j < warp_num; j++) {
+      for(unsigned int j = 0; j < 64; j++) {
         num_edges_to_process[j] = 0;
       }
 
@@ -441,14 +449,15 @@ void neighborHandler(int blockSize, int blockNum,
   else if (sync == 1) {
     for (unsigned int i = 1; i < vertices_length; i++) {
       setTime();
-      filtering<<<1, warp_num, warp_num * sizeof(unsigned int)>>>(edges_length,
+      filtering<<<1, 64, 64 * sizeof(unsigned int)>>>(edges_length,
                                 cuda_num_edges_to_process,
                                 cuda_warp_offsets,
                                 cuda_distance_prev,
                                 cuda_distance_cur,
                                 cuda_T,
                                 cuda_T_length,
-                                cuda_edges_src);
+                                cuda_edges_src,
+                                warp_num);
 
       //printf("filtering done\n");
       filteringTime += getTime();
