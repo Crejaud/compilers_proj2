@@ -210,6 +210,9 @@ int main( int argc, char** argv )
 		int bcounts[5] = {8, 5, 4, 2, 2};
 
 		for (int i = 0; i < 5; i++) {
+			for (int j = 0; j < 5; j++) {
+				printf("src[%u] = %u | dest[%u] = %u | weight[%u] = %u\n", j, edges_src[j], j, edges_dest[j], j, edges_weight[j]);
+			}
 			switch(processingMethod){
 				case ProcessingType::Push:
 				    puller(bsizes[i], bcounts[i], sync, smem, distance,

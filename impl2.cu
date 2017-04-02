@@ -14,7 +14,9 @@ __global__ void find_num_edges_to_process(unsigned int edges_length,
                             unsigned int *src,
                             unsigned int *distance_prev,
                             unsigned int *distance_cur,
-                            unsigned int *num_edges_to_process) {
+                            unsigned int *num_edges_to_process
+                            unsigned int *T,
+                            unsigned int *T_length) {
   unsigned int thread_id = blockDim.x * blockIdx.x + threadIdx.x;
   unsigned int thread_num = blockDim.x * gridDim.x;
 
@@ -31,6 +33,10 @@ __global__ void find_num_edges_to_process(unsigned int edges_length,
     if (distance_cur[src[i]] != distance_prev[src[i]]) {
       atomicAdd(&num_edges_to_process[warp_id], 1);
     }
+
+    // reset T
+    T[i] = 0;
+    *T_length = 0;
   }
 }
 
@@ -91,7 +97,7 @@ __global__ void filtering(int edges_length,
 
   __syncthreads();
 
-  int offset = 1;
+  unsigned int offset = 1;
 
   if (threadIdx.x*2+1 < blockDim.x) {
     // do parallel prefix sum!
@@ -99,12 +105,12 @@ __global__ void filtering(int edges_length,
     smem_warp_offsets[2*threadIdx.x] = num_edges_to_process[2*threadIdx.x];
     smem_warp_offsets[2*threadIdx.x+1] = num_edges_to_process[2*threadIdx.x+1];
 
-    for (int d = blockDim.x>>1; d > 0; d >>= 1) {
+    for (unsigned int d = blockDim.x>>1; d > 0; d >>= 1) {
       __syncthreads();
 
       if (threadIdx.x < d) {
-        int ai = offset*(2*threadIdx.x+1)-1;
-        int bi = offset*(2*threadIdx.x+2)-1;
+        unsigned int ai = offset*(2*threadIdx.x+1)-1;
+        unsigned int bi = offset*(2*threadIdx.x+2)-1;
 
         smem_warp_offsets[bi] += smem_warp_offsets[ai];
       }
@@ -115,13 +121,13 @@ __global__ void filtering(int edges_length,
       smem_warp_offsets[blockDim.x - 1] = 0;
     }
 
-    for (int d = 1; d < blockDim.x; d *= 2) {
+    for (unsigned int d = 1; d < blockDim.x; d *= 2) {
       offset >>= 1;
       __syncthreads();
 
       if (threadIdx.x < d) {
-        int ai = offset*(2*threadIdx.x+1)-1;
-        int bi = offset*(2*threadIdx.x+2)-1;
+        unsigned int ai = offset*(2*threadIdx.x+1)-1;
+        unsigned int bi = offset*(2*threadIdx.x+2)-1;
 
         unsigned int t = smem_warp_offsets[ai];
         smem_warp_offsets[ai] = smem_warp_offsets[bi];
@@ -143,10 +149,14 @@ __global__ void filtering(int edges_length,
   //   }
   // }
 
-  // the new length of T is the total number of edges to process!
-  *T_length = warp_offsets[blockDim.x-1] + num_edges_to_process[blockDim.x-1];
-  //printf("blockDim = %u | T becomes %u, since %u and %u | warp_id = %u\n", blockDim.x, *T_length, warp_offsets[blockDim.x-1], num_edges_to_process[blockDim.x-1], threadIdx.x);
+  // the new length of T is the total number of edges to process
+  if (threadIdx.x == 0) {
+    *T_length = warp_offsets[blockDim.x-1] + num_edges_to_process[blockDim.x-1];
+    // test
+    printf("blockDim = %u | T_length %u, since %u and %u | warp_id = %u\n", blockDim.x, *T_length, warp_offsets[blockDim.x-1], num_edges_to_process[blockDim.x-1], threadIdx.x);
+  }
 
+  __syncthreads();
   // parallel prefix sum is done and warp_offsets is complete
 
   // now we must create T
@@ -275,9 +285,12 @@ void neighborHandler(int blockSize, int blockNum,
     if (edges_src[edge_index] == 0) {
       unsigned int load = edges_length % warp_num == 0 ? edges_length / warp_num : edges_length / warp_num + 1;
       unsigned int warp_id = edge_index / load;
-      num_edges_to_process[warp_id]++;;
+      num_edges_to_process[warp_id]++;
     }
+    T[edge_index] = 0;
   }
+
+  *T_length = 0;
 
   cudaMalloc((void **)&cuda_edges_src, edges_length * sizeof(unsigned int));
   cudaMalloc((void **)&cuda_edges_dest, edges_length * sizeof(unsigned int));
@@ -433,7 +446,9 @@ void neighborHandler(int blockSize, int blockNum,
                                   cuda_edges_src,
                                   cuda_distance_prev,
                                   cuda_distance_cur,
-                                  cuda_num_edges_to_process);
+                                  cuda_num_edges_to_process,
+                                  cuda_T,
+                                  cuda_T_length);
     }
   }
 
