@@ -389,7 +389,9 @@ void neighborHandler(int blockSize, int blockNum,
                                   cuda_edges_src,
                                   cuda_distance_prev,
                                   cuda_distance_cur,
-                                  cuda_num_edges_to_process);
+                                  cuda_num_edges_to_process,
+                                  cuda_T,
+                                  cuda_T_length);
     }
   }
   // sync is in core
