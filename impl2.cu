@@ -92,38 +92,38 @@ __global__ void filtering(unsigned int edges_length,
                           unsigned int *T,
                           unsigned int *T_length,
                           unsigned int *src) {
-  if (threadIdx.x == 0) {
-    printf("filtering before shared memory. Blockdim = %u\n", blockDim.x);
-  }
+  //if (threadIdx.x == 0) {
+  //  printf("filtering before shared memory. Blockdim = %u\n", blockDim.x);
+  //}
 
   extern __shared__ unsigned int smem_warp_offsets[ ];
   // we can assume it will fit since there will be at most 64 warps
 
-  if (threadIdx.x == 0) {
-    printf("filtering after shared memory. Blockdim = %u\n", blockDim.x);
-  }
+  //if (threadIdx.x == 0) {
+  //  printf("filtering after shared memory. Blockdim = %u\n", blockDim.x);
+  //}
 
   __syncthreads();
 
-  if (threadIdx.x == 0) {
-    printf("filtering. Blockdim = %u\n", blockDim.x);
-  }
+  //if (threadIdx.x == 0) {
+  //  printf("filtering. Blockdim = %u\n", blockDim.x);
+  //}
 
   unsigned int offset = 1;
 
   if (threadIdx.x*2+1 < blockDim.x) {
 
-    if (threadIdx.x == 0) {
-      printf("entering parallel prefix sum\n");
-    }
+    //if (threadIdx.x == 0) {
+    //  printf("entering parallel prefix sum\n");
+    //}
     // do parallel prefix sum!
 
     smem_warp_offsets[2*threadIdx.x] = num_edges_to_process[2*threadIdx.x];
     smem_warp_offsets[2*threadIdx.x+1] = num_edges_to_process[2*threadIdx.x+1];
 
-    if (threadIdx.x == 0) {
-      printf("setting shared memory\n");
-    }
+    //if (threadIdx.x == 0) {
+  //    printf("setting shared memory\n");
+    //}
 
     for (unsigned int d = blockDim.x>>1; d > 0; d >>= 1) {
       __syncthreads();
@@ -138,50 +138,50 @@ __global__ void filtering(unsigned int edges_length,
     }
 
     if (threadIdx.x == 0) {
-      printf("first pass done\n");
+      //printf("first pass done\n");
       smem_warp_offsets[blockDim.x - 1] = 0;
-      printf("starting second pass\n");
+      //printf("starting second pass\n");
     }
 
     for (unsigned int d = 1; d < blockDim.x; d *= 2) {
-      if (threadIdx.x == 0)
-        printf("offset before %u\n", offset);
+      //if (threadIdx.x == 0)
+      //  printf("offset before %u\n", offset);
       offset >>= 1;
-      if (threadIdx.x == 0)
-        printf("offset after %u\n", offset);
+      //if (threadIdx.x == 0)
+      //  printf("offset after %u\n", offset);
       __syncthreads();
 
       if (offset == 0)
         break;
 
       if (threadIdx.x < d) {
-        if (threadIdx.x == 0)
-          printf("inside if\n");
+        //if (threadIdx.x == 0)
+        //  printf("inside if\n");
         unsigned int ai = offset*(2*threadIdx.x+1)-1;
         unsigned int bi = offset*(2*threadIdx.x+2)-1;
 
-        if (threadIdx.x == 0)
-          printf("before t is set | ai %u | bi %u\n", ai, bi);
+        //if (threadIdx.x == 0)
+        //  printf("before t is set | ai %u | bi %u\n", ai, bi);
         unsigned int t = smem_warp_offsets[ai];
         smem_warp_offsets[ai] = smem_warp_offsets[bi];
         smem_warp_offsets[bi] += t;
-        if (threadIdx.x == 0)
-          printf("after swap\n");
+        //if (threadIdx.x == 0)
+        //  printf("after swap\n");
       }
     }
 
-    if (threadIdx.x == 0) {
-      printf("second pass done\n");
-    }
+    //if (threadIdx.x == 0) {
+  //    printf("second pass done\n");
+    //}
 
     __syncthreads();
 
     warp_offsets[2*threadIdx.x] = smem_warp_offsets[2*threadIdx.x];
     warp_offsets[2*threadIdx.x+1] = smem_warp_offsets[2*threadIdx.x + 1];
 
-    if (threadIdx.x == 0) {
-      printf("warp_offset set\n");
-    }
+    //if (threadIdx.x == 0) {
+    //  printf("warp_offset set\n");
+    //}
   }
 
   __syncthreads();
@@ -196,7 +196,7 @@ __global__ void filtering(unsigned int edges_length,
   if (threadIdx.x == 0) {
     *T_length = warp_offsets[blockDim.x-1] + num_edges_to_process[blockDim.x-1];
     // test
-    printf("blockDim = %u | T_length %u, since %u and %u | warp_id = %u\n", blockDim.x, *T_length, warp_offsets[blockDim.x-1], num_edges_to_process[blockDim.x-1], threadIdx.x);
+    //printf("blockDim = %u | T_length %u, since %u and %u | warp_id = %u\n", blockDim.x, *T_length, warp_offsets[blockDim.x-1], num_edges_to_process[blockDim.x-1], threadIdx.x);
   }
 
   __syncthreads();
