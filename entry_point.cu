@@ -229,11 +229,11 @@ int main( int argc, char** argv )
 		//for (int i = 0; i < 5; i++) {
 			switch(processingMethod){
 				case ProcessingType::Push:
-				    puller(bsizes[i], bcounts[i], sync, smem, distance,
+				    puller(bsize, bcount, sync, smem, distance,
 							edges_src, edges_dest, edges_weight, edges_length, vertices_length);
 				    break;
 				case ProcessingType::Neighbor:
-				    neighborHandler(bsizes[i], bcounts[i], sync, smem, distance,
+				    neighborHandler(bsize, bcount, sync, smem, distance,
 							edges_src, edges_dest, edges_weight, edges_length, vertices_length);
 				    break;
 				default:
