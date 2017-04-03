@@ -223,10 +223,10 @@ int main( int argc, char** argv )
 			}
 		}
 
-		int bsizes[5] = {256, 384, 512, 768, 1024};
-		int bcounts[5] = {8, 5, 4, 2, 2};
+		//int bsizes[5] = {256, 384, 512, 768, 1024};
+		//int bcounts[5] = {8, 5, 4, 2, 2};
 
-		for (int i = 0; i < 5; i++) {
+		//for (int i = 0; i < 5; i++) {
 			switch(processingMethod){
 				case ProcessingType::Push:
 				    puller(bsizes[i], bcounts[i], sync, smem, distance,
@@ -239,7 +239,7 @@ int main( int argc, char** argv )
 				default:
 				    own(&parsedGraph, bsize, bcount);
 			}
-		}
+		//}
 
 		// print it out to test
     char outputStr[100];
